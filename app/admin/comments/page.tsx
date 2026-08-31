@@ -1,0 +1,3 @@
+import { MessageSquare } from 'lucide-react';
+import { AdminModulePage } from '@/components/admin-module-page';
+export default function Page(){return <AdminModulePage eyebrow="MODERASI" title="Komentar & laporan" description="Moderasi komentar publik dengan alasan keputusan dan jejak audit yang dapat diperiksa." icon={MessageSquare} metrics={[{value:'4',label:'Perlu tinjauan',note:'Antrean moderasi'},{value:'1',label:'Prioritas tinggi',note:'Perlu keputusan'},{value:'18',label:'Diselesaikan',note:'Minggu ini'}]} actions={[{title:'Tinjau laporan prioritas',description:'Satu laporan ditandai berisiko tinggi.'},{title:'Selesaikan antrean moderasi',description:'Empat komentar menunggu keputusan.'}]} />}

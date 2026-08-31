@@ -1,0 +1,3 @@
+import { Users } from 'lucide-react';
+import { AdminModulePage } from '@/components/admin-module-page';
+export default function Page(){return <AdminModulePage eyebrow="IDENTITAS & AKSES" title="Pengguna, role, dan unit" description="Kelola akses berbasis role, unit organisasi, periode kepengurusan, dan prinsip least privilege." icon={Users} metrics={[{value:'16',label:'Pengguna aktif',note:'Periode 2026/2027'},{value:'5',label:'Role',note:'Pemisahan kewenangan'},{value:'2',label:'Review akses',note:'Jatuh tempo'}]} actions={[{title:'Tinjau akses berkala',description:'Dua penugasan perlu dikonfirmasi ulang.'},{title:'Periksa pemisahan tugas',description:'Pastikan reviewer berbeda dari pembuat konten.'}]} />}

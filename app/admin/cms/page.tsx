@@ -1,0 +1,3 @@
+import { FilePenLine } from 'lucide-react';
+import { AdminModulePage } from '@/components/admin-module-page';
+export default function Page(){return <AdminModulePage eyebrow="CMS EDITORIAL" title="Kelola konten publik" description="Satu alur untuk berita, D-SIGHT, D-TRACE, D-DAR, program, dan halaman statis." icon={FilePenLine} metrics={[{value:'12',label:'Draft',note:'Sedang disusun'},{value:'8',label:'Menunggu review',note:'Butuh editor'},{value:'5',label:'Terjadwal',note:'Publikasi berikutnya'}]} actions={[{title:'Tinjau antrean editorial',description:'Delapan konten menunggu pemeriksaan editor.'},{title:'Periksa jadwal publikasi',description:'Lima konten dijadwalkan pada periode berjalan.'}]} />}

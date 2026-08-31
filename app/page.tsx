@@ -5,11 +5,12 @@ import {
   CalendarDays,
   ChevronRight,
   FileText,
-  Landmark,
   Megaphone,
   Search,
   ShieldCheck,
 } from 'lucide-react';
+import { PublicFooter } from '@/components/public-footer';
+import { PublicHeader } from '@/components/public-header';
 
 const updates = [
   { type: 'D-SIGHT', title: 'Kajian biaya pendidikan dan akses layanan akademik 2026', date: '29 Agustus 2026', tone: 'bg-emerald-100 text-emerald-800' },
@@ -21,22 +22,7 @@ export default function Home() {
   return (
     <main>
       <a className="skip-link" href="#konten-utama">Lewati ke konten utama</a>
-      <header className="site-header">
-        <div className="shell flex h-20 items-center justify-between gap-8">
-          <Link className="brand" href="/" aria-label="DPM FIPP UNIMA, Beranda">
-            <span className="brand-mark" aria-hidden="true"><Landmark size={21} /></span>
-            <span><strong>DPM FIPP</strong><small>UNIVERSITAS NEGERI MANADO</small></span>
-          </Link>
-          <nav aria-label="Navigasi utama" className="hidden items-center gap-7 lg:flex">
-            <Link className="nav-link active" href="/">Beranda</Link>
-            <Link className="nav-link" href="/berita">Informasi</Link>
-            <Link className="nav-link" href="/ddas/kirim">D-DAS</Link>
-            <Link className="nav-link" href="/#transparansi">Transparansi</Link>
-            <Link className="nav-link" href="/#tentang">Tentang DPM</Link>
-          </nav>
-          <Link className="admin-link" href="/admin/dashboard">Portal Admin <ArrowRight size={15} /></Link>
-        </div>
-      </header>
+      <PublicHeader />
 
       <section className="hero" id="konten-utama">
         <div className="shell hero-grid">
@@ -44,7 +30,7 @@ export default function Home() {
             <div className="eyebrow"><span /> Dewan Perwakilan Mahasiswa FIPP UNIMA</div>
             <h1>Suara mahasiswa,<br /><em>dikawal bersama.</em></h1>
             <p className="hero-copy">Ruang resmi untuk menyampaikan aspirasi, mengikuti penanganannya, dan mengakses kerja pengawasan DPM secara terbuka.</p>
-            <form className="search-box" action="/berita" role="search">
+            <form className="search-box" action="/berita">
               <Search size={20} aria-hidden="true" />
               <label className="sr-only" htmlFor="site-search">Cari informasi publik</label>
               <input id="site-search" name="q" placeholder="Cari kajian, berita, program, atau arsip…" />
@@ -110,14 +96,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer id="tentang">
-        <div className="shell footer-grid">
-          <div><div className="brand light-brand"><span className="brand-mark"><Landmark size={21} /></span><span><strong>DPM FIPP</strong><small>UNIVERSITAS NEGERI MANADO</small></span></div><p>Ruang representasi, aspirasi, dan pengawasan mahasiswa FIPP UNIMA.</p></div>
-          <div><b>Layanan</b><Link href="/ddas/kirim">Kirim Aspirasi</Link><Link href="/ddas/tracking">Lacak Aspirasi</Link><Link href="/berita">Publikasi</Link></div>
-          <div><b>Informasi</b><Link href="#">Kebijakan Privasi</Link><Link href="#">Aksesibilitas</Link><Link href="#">Status Layanan</Link></div>
-        </div>
-        <div className="shell copyright">© 2026 DPM FIPP UNIMA <span>Bahasa Indonesia · WITA (UTC+8)</span></div>
-      </footer>
+      <PublicFooter />
     </main>
   );
 }
