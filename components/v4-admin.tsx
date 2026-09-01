@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import {
   Activity,
   Bell,
@@ -97,6 +100,24 @@ function Badge({ children }: { children: React.ReactNode }) {
 }
 
 export function AdminDashboardV4() {
+  const [dashboardUnit, setDashboardUnit] = useState('Semua');
+  const [dashboardPeriod, setDashboardPeriod] = useState('Semua');
+  const dashboardCases = useMemo(
+    () =>
+      cases.filter(
+        (item) =>
+          (dashboardUnit === 'Semua' || item[4] === dashboardUnit) &&
+          (dashboardPeriod === 'Semua' || item[5].startsWith(dashboardPeriod)),
+      ),
+    [dashboardUnit, dashboardPeriod],
+  );
+  const workflowStatuses = [
+    'Masuk',
+    'Ditinjau',
+    'Diteruskan',
+    'Ditindaklanjuti',
+    'Selesai',
+  ];
   return (
     <div className="v4-admin-content">
       <PageTitle
@@ -133,24 +154,44 @@ export function AdminDashboardV4() {
             <h2>Monitoring D-DAS</h2>
             <p>Ringkasan status aspirasi dalam sistem D-DAS.</p>
           </div>
-          <button>Semua Unit⌄</button>
-          <button>Hari Ini　▣</button>
+          <select
+            value={dashboardUnit}
+            onChange={(event) => setDashboardUnit(event.target.value)}
+            aria-label="Saring unit penanggung jawab"
+          >
+            <option value="Semua">Semua Unit</option>
+            {[...new Set(cases.map((item) => item[4]))].map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+          <select
+            value={dashboardPeriod}
+            onChange={(event) => setDashboardPeriod(event.target.value)}
+            aria-label="Saring tanggal aspirasi"
+          >
+            <option value="Semua">Semua Tanggal</option>
+            <option value="20 Mei">20 Mei 2026</option>
+            <option value="19 Mei">19 Mei 2026</option>
+            <option value="18 Mei">18 Mei 2026</option>
+          </select>
         </header>
         <div>
-          {[
-            ['Masuk', '3', '20%'],
-            ['Ditinjau', '1', '7%'],
-            ['Diteruskan', '0', '0%'],
-            ['Ditindaklanjuti', '1', '7%'],
-            ['Selesai', '1', '7%'],
-          ].map((x) => (
-            <article key={x[0]}>
-              <Badge>{x[0]}</Badge>
-              <strong>{x[1]}</strong>
-              <small>{x[2]} dari total</small>
-              <i />
-            </article>
-          ))}
+          {workflowStatuses.map((status) => {
+            const count = dashboardCases.filter(
+              (item) => item[3] === status,
+            ).length;
+            const percentage = dashboardCases.length
+              ? Math.round((count / dashboardCases.length) * 100)
+              : 0;
+            return (
+              <article key={status}>
+                <Badge>{status}</Badge>
+                <strong>{count}</strong>
+                <small>{percentage}% dari hasil filter</small>
+                <i />
+              </article>
+            );
+          })}
         </div>
       </section>
       <div className="v4-dashboard-grid">
@@ -173,7 +214,7 @@ export function AdminDashboardV4() {
               <b>Unit Penanggung Jawab</b>
               <b>Dibuat Pada</b>
             </div>
-            {cases.map((r) => (
+            {dashboardCases.map((r) => (
               <Link href="/admin/ddas" key={r[0]}>
                 {r.map((x, i) => (
                   <span key={x}>
@@ -182,6 +223,11 @@ export function AdminDashboardV4() {
                 ))}
               </Link>
             ))}
+            {!dashboardCases.length && (
+              <p className="v5-filter-empty">
+                Tidak ada aspirasi yang sesuai dengan filter.
+              </p>
+            )}
           </div>
         </section>
         <aside>
@@ -518,27 +564,70 @@ export function DdasCaseV4() {
 }
 
 const comments = [
-  [
-    'Anonim',
-    'Perlu Moderasi',
-    'Apakah ada perbedaan syarat untuk mahasiswa aktif angkatan lama?',
-  ],
-  ['Bintang S.', 'Dipublikasikan', 'Keren! Website baru makin informatif.'],
-  ['Anonim', 'Perlu Moderasi', 'Butuh info lebih lanjut tentang pendaftaran'],
-  ['Ananda N.', 'Dipublikasikan', 'Terima kasih atas informasinya.'],
-  ['Mario K.', 'Ditolak', 'Promosi tidak relevan'],
+  {
+    author: 'Anonim',
+    status: 'Perlu Penyaringan',
+    body: 'Apakah ada perbedaan syarat untuk mahasiswa aktif angkatan lama?',
+    source: 'Beranda',
+    date: '20 Mei 2026',
+  },
+  {
+    author: 'Bintang S.',
+    status: 'Dipublikasikan',
+    body: 'Keren! Website baru makin informatif.',
+    source: 'Berita',
+    date: '19 Mei 2026',
+  },
+  {
+    author: 'Anonim',
+    status: 'Perlu Penyaringan',
+    body: 'Butuh info lebih lanjut tentang pendaftaran',
+    source: 'Berita',
+    date: '18 Mei 2026',
+  },
+  {
+    author: 'Ananda N.',
+    status: 'Dipublikasikan',
+    body: 'Terima kasih atas informasinya.',
+    source: 'Beranda',
+    date: '17 Mei 2026',
+  },
+  {
+    author: 'Mario K.',
+    status: 'Ditolak',
+    body: 'Promosi tidak relevan',
+    source: 'Beranda',
+    date: '16 Mei 2026',
+  },
 ];
 export function CommentsV4() {
+  const [source, setSource] = useState('Semua');
+  const [status, setStatus] = useState('Semua');
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState(0);
+  const filtered = useMemo(
+    () =>
+      comments.filter(
+        (item) =>
+          (source === 'Semua' || item.source === source) &&
+          (status === 'Semua' || item.status === status) &&
+          `${item.author} ${item.body}`
+            .toLowerCase()
+            .includes(query.toLowerCase()),
+      ),
+    [source, status, query],
+  );
+  const active = filtered[selected] ?? filtered[0] ?? comments[0];
   return (
     <div className="v4-admin-content">
       <PageTitle
-        title="Komentar & Moderasi"
-        copy="Kelola semua komentar dari Beranda, Berita, dan halaman lainnya."
+        title="Komentar & Penyaringan"
+        copy="Tinjau, saring, dan kelola semua komentar dari Beranda, Berita, dan halaman lainnya."
       />
       <div className="v4-comment-stats">
         {[
           ['Total Komentar', '421'],
-          ['Perlu Moderasi', '24'],
+          ['Perlu Penyaringan', '24'],
           ['Anonim', '153'],
           ['Dihapus Hari Ini', '6'],
         ].map((x) => (
@@ -552,51 +641,100 @@ export function CommentsV4() {
         ))}
       </div>
       <div className="v4-comment-filters">
-        <select>
-          <option>Semua Sumber</option>
+        <select
+          value={source}
+          onChange={(event) => {
+            setSource(event.target.value);
+            setSelected(0);
+          }}
+          aria-label="Saring berdasarkan sumber"
+        >
+          <option value="Semua">Semua Sumber</option>
+          <option value="Beranda">Beranda</option>
+          <option value="Berita">Berita</option>
         </select>
-        <select>
-          <option>Semua Status</option>
+        <select
+          value={status}
+          onChange={(event) => {
+            setStatus(event.target.value);
+            setSelected(0);
+          }}
+          aria-label="Saring berdasarkan status"
+        >
+          <option value="Semua">Semua Status</option>
+          <option value="Perlu Penyaringan">Perlu Penyaringan</option>
+          <option value="Dipublikasikan">Dipublikasikan</option>
+          <option value="Ditolak">Ditolak</option>
         </select>
         <select>
           <option>Terbaru</option>
         </select>
         <label>
-          <input placeholder="Cari komentar atau pengguna..." />
+          <input
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setSelected(0);
+            }}
+            placeholder="Cari komentar atau pengguna..."
+          />
           <Search />
         </label>
-        <button>Filter Lainnya</button>
+        <button
+          type="button"
+          onClick={() => {
+            setSource('Semua');
+            setStatus('Semua');
+            setQuery('');
+            setSelected(0);
+          }}
+        >
+          Reset Filter
+        </button>
       </div>
       <div className="v4-comments-grid">
         <section className="v4-panel">
           <h2>Daftar Komentar</h2>
-          {comments.map((x, i) => (
-            <article className="v4-comment-row" key={x[2]}>
-              <input type="checkbox" />
-              <span>{x[0].slice(0, 2)}</span>
+          {filtered.map((item, i) => (
+            <article
+              className={`v4-comment-row ${active.body === item.body ? 'selected' : ''}`}
+              key={item.body}
+              onClick={() => setSelected(i)}
+            >
+              <input
+                type="checkbox"
+                aria-label={`Pilih komentar ${item.author}`}
+                onClick={(event) => event.stopPropagation()}
+              />
+              <span>{item.author.slice(0, 2)}</span>
               <div>
                 <p>
-                  <Badge>{x[1]}</Badge>　<b>{x[2]}</b>
+                  <Badge>{item.status}</Badge>　<b>{item.body}</b>
                 </p>
                 <small>
-                  {i % 2 ? 'Berita A: Seminar Nasional Pendidikan' : 'Beranda'}
+                  {item.source === 'Berita'
+                    ? 'Berita: Seminar Nasional Pendidikan'
+                    : 'Beranda'}
                   　　💬 {i}
                 </small>
               </div>
-              <time>{20 - i} Mei 2026</time>
+              <time>{item.date}</time>
             </article>
           ))}
+          {!filtered.length && (
+            <p className="v5-filter-empty">
+              Tidak ada komentar yang sesuai dengan filter.
+            </p>
+          )}
         </section>
         <section className="v4-panel v4-thread">
           <h2>
-            Preview Thread　<Badge>Perlu Moderasi</Badge>
+            Pratinjau Utas　<Badge>{active.status}</Badge>
           </h2>
           <article>
-            <b>😎　Anonim</b>
+            <b>😎　{active.author}</b>
             <small>20 Mei 2026 10:23</small>
-            <p>
-              Apakah ada perbedaan syarat untuk mahasiswa aktif angkatan lama?
-            </p>
+            <p>{active.body}</p>
           </article>
           <p>3 balasan</p>
           {[
@@ -616,7 +754,7 @@ export function CommentsV4() {
             </button>
             <button>Lihat Thread Lengkap</button>
             <button className="primary">
-              <ShieldCheck /> Moderasi⌄
+              <ShieldCheck /> Saring Komentar
             </button>
           </footer>
         </section>
@@ -635,6 +773,23 @@ const users = [
   ['Pengurus HIMAPSI', 'HIMAPSI', 'ORMAWA', 'Aktif'],
 ];
 export function IamV4() {
+  const [userQuery, setUserQuery] = useState('');
+  const [unitFilter, setUnitFilter] = useState('Semua');
+  const [roleFilter, setRoleFilter] = useState('Semua');
+  const [statusFilter, setStatusFilter] = useState('Semua');
+  const filteredUsers = useMemo(
+    () =>
+      users.filter(
+        (user) =>
+          (unitFilter === 'Semua' || user[1] === unitFilter) &&
+          (roleFilter === 'Semua' || user[2] === roleFilter) &&
+          (statusFilter === 'Semua' || user[3] === statusFilter) &&
+          `${user[0]} ${user[1]} ${user[2]}`
+            .toLowerCase()
+            .includes(userQuery.toLowerCase()),
+      ),
+    [userQuery, unitFilter, roleFilter, statusFilter],
+  );
   return (
     <div className="v4-admin-content">
       <PageTitle
@@ -647,8 +802,8 @@ export function IamV4() {
           <b>Role ORMAWA menggantikan Viewer</b>
           <span>
             Setelah permintaan halaman disetujui, ORMAWA dapat mengelola dan
-            menerbitkan halaman organisasinya sendiri. Super Admin,
-            Chairperson, dan Secretary tetap dapat melakukan intervensi.
+            menerbitkan halaman organisasinya sendiri. Super Admin, Chairperson,
+            dan Secretary tetap dapat melakukan intervensi.
           </span>
         </p>
       </div>
@@ -678,15 +833,37 @@ export function IamV4() {
             </button>
           </header>
           <div className="v4-iam-filters">
-            <input placeholder="Cari nama, email, atau unit..." />
-            <select>
-              <option>Semua Unit</option>
+            <input
+              value={userQuery}
+              onChange={(event) => setUserQuery(event.target.value)}
+              placeholder="Cari nama, email, atau unit..."
+            />
+            <select
+              value={unitFilter}
+              onChange={(event) => setUnitFilter(event.target.value)}
+            >
+              <option value="Semua">Semua Unit</option>
+              {[...new Set(users.map((user) => user[1]))].map((item) => (
+                <option key={item}>{item}</option>
+              ))}
             </select>
-            <select>
-              <option>Semua Role</option>
+            <select
+              value={roleFilter}
+              onChange={(event) => setRoleFilter(event.target.value)}
+            >
+              <option value="Semua">Semua Role</option>
+              {[...new Set(users.map((user) => user[2]))].map((item) => (
+                <option key={item}>{item}</option>
+              ))}
             </select>
-            <select>
-              <option>Semua Status</option>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <option value="Semua">Semua Status</option>
+              {[...new Set(users.map((user) => user[3]))].map((item) => (
+                <option key={item}>{item}</option>
+              ))}
             </select>
           </div>
           <div className="v4-table v4-users-table">
@@ -697,7 +874,7 @@ export function IamV4() {
               <b>Status</b>
               <b>Terakhir Aktif</b>
             </div>
-            {users.map((u, i) => (
+            {filteredUsers.map((u, i) => (
               <p key={u[0]}>
                 <span>
                   <b>{u[0]}</b>
@@ -717,6 +894,11 @@ export function IamV4() {
                 <span>{20 - i} Mei 2026</span>
               </p>
             ))}
+            {!filteredUsers.length && (
+              <p className="v5-filter-empty">
+                Tidak ada pengguna yang sesuai dengan filter.
+              </p>
+            )}
           </div>
         </section>
         <aside>

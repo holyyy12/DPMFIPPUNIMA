@@ -21,6 +21,6 @@ export function AdminShell({children}:{children:React.ReactNode}){
    <nav>{items.map(([href,label,Icon])=>{const active=pathname===href||pathname.startsWith(href+'/');return <Link key={href} href={href} className={active?'active':''} onClick={()=>setOpen(false)}><Icon/>{label}{label==='Notifikasi'&&<i>12</i>}</Link>})}</nav>
    <footer><b>DPM FIPP UNIMA</b><small>Dewan Perwakilan Mahasiswa<br/>Fakultas Ilmu Pendidikan dan Psikologi<br/>Universitas Negeri Manado</small></footer>
   </aside>
-  <section><header className="v4-admin-top"><div><button onClick={()=>setOpen(true)}><Menu/></button><Link href="/admin/dashboard">Beranda</Link><span>›</span><p>{names[pathname]??'Portal Admin'}</p></div><div><span><ShieldCheck/> Super Admin</span><button><Bell/><i>12</i></button><button><Menu/></button></div></header>{children}<footer className="v4-admin-foot">© 2026 DPM FIPP UNIMA. Semua hak dilindungi.<span>Versi 1.0.0</span></footer></section>
+  <section><header className="v4-admin-top"><div><button onClick={()=>setOpen(true)}><Menu/></button><Link href="/admin/dashboard">Beranda</Link><span>›</span><p>{names[pathname]??'Portal Admin'}</p></div><div><span><ShieldCheck/> Super Admin</span><button><Bell/><i>12</i></button></div></header>{children}<footer className="v4-admin-foot">© 2026 DPM FIPP UNIMA. Semua hak dilindungi.<span>Versi 1.0.0</span></footer></section>
  </main>
 }

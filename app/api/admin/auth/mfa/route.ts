@@ -10,8 +10,27 @@ export async function POST(){
     const session=await verifyAdminSession(); if(!session)return Response.json({ok:false,message:'Sesi tidak valid.'},{status:401});
     const {url,anon}=supabaseConfig(); const response=await fetch(`${url}/auth/v1/factors`,{method:'POST',headers:{apikey:anon,Authorization:`Bearer ${session.token}`,'Content-Type':'application/json'},body:JSON.stringify({factor_type:'totp',friendly_name:'DPM Admin Authenticator'}),cache:'no-store'});
     const data=await response.json() as {id?:string;totp?:{qr_code?:string;secret?:string}}; if(!response.ok||!data.id||!data.totp?.qr_code||!data.totp.secret)return Response.json({ok:false,message:'Authenticator belum dapat didaftarkan.'},{status:response.status});
-    return Response.json({ok:true,data:{id:data.id,qrCode:data.totp?.qr_code,secret:data.totp?.secret}},{headers:{'Cache-Control':'private, no-store'}});
-  }catch{return Response.json({ok:false,message:'MFA belum tersedia.'},{status:503})}
+const rawQr = data.totp.qr_code;
+
+const qrCode = rawQr.startsWith('data:')
+  ? rawQr
+  : `data:image/svg+xml;charset=utf-8,${encodeURIComponent(rawQr)}`;
+
+return Response.json(
+  {
+    ok: true,
+    data: {
+      id: data.id,
+      qrCode,
+      secret: data.totp.secret,
+    },
+  },
+  {
+    headers: {
+      'Cache-Control': 'private, no-store',
+    },
+  },
+);  }catch{return Response.json({ok:false,message:'MFA belum tersedia.'},{status:503})}
 }
 
 export async function PUT(request:Request){
