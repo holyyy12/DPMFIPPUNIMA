@@ -39,3 +39,5 @@ tsconfig.tsbuildinfo
 /.wrangler/
 /outputs/
 /work/
+
+/supabase/.temp/
