@@ -4,7 +4,8 @@ const csp = "default-src 'self'; img-src 'self' data: blob: https:; font-src 'se
 
 export function proxy(request: NextRequest) {
   const path=request.nextUrl.pathname;
-  if(path.startsWith('/admin/')&&!path.startsWith('/admin/login')&&!path.startsWith('/admin/mfa')&&!request.cookies.get('dpm_admin_access')){
+  const enforceAdminAuth=process.env.APP_ENV==='production';
+  if(enforceAdminAuth&&path.startsWith('/admin/')&&!path.startsWith('/admin/login')&&!path.startsWith('/admin/mfa')&&!request.cookies.get('dpm_admin_access')){
     return NextResponse.redirect(new URL('/admin/login',request.url));
   }
   const response = NextResponse.next();

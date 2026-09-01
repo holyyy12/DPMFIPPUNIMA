@@ -1,70 +1,26 @@
 'use client';
-
 import Link from 'next/link';
-import { Bell, BookOpen, CircleGauge, FilePenLine, Inbox, Landmark, LogOut, Menu, MessageSquare, Search, Settings, Users, X } from 'lucide-react';
+import { Bell, BookOpen, Building2, ChartNoAxesCombined, CircleGauge, FilePenLine, Inbox, LayoutGrid, LockKeyhole, Menu, MessageSquare, ScrollText, Settings2, ShieldCheck, Users, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-const groups = [
-  { label: 'RUANG KERJA', items: [
-    { href: '/admin/dashboard', label: 'Dashboard', icon: CircleGauge },
-    { href: '/admin/cms', label: 'Konten', icon: FilePenLine, badge: '8' },
-    { href: '/admin/media', label: 'Media', icon: BookOpen },
-  ] },
-  { label: 'LAYANAN', items: [
-    { href: '/admin/ddas', label: 'D-DAS', icon: Inbox, badge: '12' },
-    { href: '/admin/comments', label: 'Moderasi', icon: MessageSquare, badge: '4' },
-  ] },
-  { label: 'KELEMBAGAAN', items: [
-    { href: '/admin/iam', label: 'Pengguna & akses', icon: Users },
-    { href: '/admin/settings', label: 'Pengaturan', icon: Settings },
-  ] },
-];
-
-const pageNames: Record<string, string> = {
-  '/admin/dashboard': 'Dashboard', '/admin/cms': 'Konten', '/admin/media': 'Media', '/admin/ddas': 'D-DAS',
-  '/admin/comments': 'Moderasi', '/admin/iam': 'Pengguna & akses', '/admin/settings': 'Pengaturan',
-};
-
-export function AdminShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const title = pageNames[pathname] ?? 'Portal Admin';
-  useEffect(()=>{if(pathname==='/admin/login'||pathname==='/admin/mfa')return;void(async()=>{const response=await fetch('/api/admin/auth/session',{cache:'no-store'});if(!response.ok)window.location.assign('/admin/login');else{const result=await response.json() as {aal?:string};if(result.aal!=='aal2')window.location.assign('/admin/mfa')}})()},[pathname]);
-  if (pathname === '/admin/login' || pathname === '/admin/mfa') return children;
-
-  return (
-    <main className={`admin-shell${open ? ' menu-open' : ''}`}>
-      <button className="admin-sidebar-backdrop" aria-label="Tutup menu admin" onClick={() => setOpen(false)} />
-      <aside className="admin-sidebar" id="admin-navigation">
-        <div className="admin-sidebar-head">
-          <Link className="admin-brand" href="/" onClick={() => setOpen(false)}><span><Landmark /></span><p><b>DPM FIPP</b><small>ADMIN PORTAL</small></p></Link>
-          <button type="button" className="admin-sidebar-close" aria-label="Tutup menu admin" onClick={() => setOpen(false)}><X /></button>
-        </div>
-        <nav aria-label="Navigasi admin">
-          {groups.map((group) => (
-            <div className="admin-nav-group" key={group.label}>
-              <small>{group.label}</small>
-              {group.items.map((item) => {
-                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                const Icon = item.icon;
-                return <Link className={active ? 'active' : ''} href={item.href} key={item.href} aria-current={active ? 'page' : undefined} onClick={() => setOpen(false)}><Icon /> {item.label}{item.badge && <span>{item.badge}</span>}</Link>;
-              })}
-            </div>
-          ))}
-        </nav>
-        <div className="admin-user"><span>PV</span><p><b>Preview Admin</b><small>MFA produksi belum terhubung</small></p></div>
-      </aside>
-      <section className="admin-main">
-        <header className="admin-topbar">
-          <div className="admin-topbar-title">
-            <button className="admin-menu-button" type="button" aria-label="Buka menu admin" aria-expanded={open} aria-controls="admin-navigation" onClick={() => setOpen(true)}><Menu /></button>
-            <div><p>PORTAL ADMIN</p><h1>{title}</h1></div>
-          </div>
-          <div className="admin-tools"><label><Search /><input aria-label="Cari atau buka perintah" placeholder="Cari atau buka perintah…" /><kbd>Ctrl K</kbd></label><button aria-label="Notifikasi"><Bell /></button><button aria-label="Keluar dari portal admin" onClick={async()=>{await fetch('/api/admin/auth/logout',{method:'POST'});window.location.assign('/admin/login')}}><LogOut /></button></div>
-        </header>
-        {children}
-      </section>
-    </main>
-  );
+const items=[
+ ['/admin/dashboard','Dashboard',LayoutGrid],['/admin/ddas','D-DAS',Inbox],['/admin/insight','D-SIGHT',ChartNoAxesCombined],
+ ['/admin/trace','D-TRACE',CircleGauge],['/admin/cms','Publikasi',FilePenLine],['/admin/media','Media',BookOpen],
+ ['/admin/comments','Komentar',MessageSquare],['/admin/notifications','Notifikasi',Bell],['/admin/organization','Periode & Organisasi',Building2],
+ ['/admin/iam','Pengguna, Role & Permission',Users],['/admin/permission','Permission',ShieldCheck],['/admin/audit','Audit Log',ScrollText],
+] as const;
+const names:Record<string,string>=Object.fromEntries(items.map(x=>[x[0],x[1]]));
+export function AdminShell({children}:{children:React.ReactNode}){
+ const pathname=usePathname(); const[open,setOpen]=useState(false);
+ useEffect(()=>{if(process.env.NEXT_PUBLIC_ENFORCE_ADMIN_AUTH!=='true'||pathname==='/admin/login'||pathname==='/admin/mfa')return;void(async()=>{const r=await fetch('/api/admin/auth/session',{cache:'no-store'});if(!r.ok)location.assign('/admin/login');else{const x=await r.json() as {aal?:string};if(x.aal!=='aal2')location.assign('/admin/mfa')}})()},[pathname]);
+ if(pathname==='/admin/login'||pathname==='/admin/mfa')return children;
+ return <main className={`v4-admin ${open?'menu-open':''}`}><button className="v4-admin-backdrop" onClick={()=>setOpen(false)} aria-label="Tutup menu"/>
+  <aside><header><Link href="/"><img src="/dpm-crest.png" alt="Lambang DPM FIPP UNIMA"/><span><b>DPM FIPP UNIMA</b><small>ADMIN</small></span></Link><button onClick={()=>setOpen(false)}><X/></button></header>
+   <div className="v4-admin-profile"><span>SA</span><p><b>Super Admin</b><small>super_admin</small><em>● Online</em></p></div>
+   <nav>{items.map(([href,label,Icon])=>{const active=pathname===href||pathname.startsWith(href+'/');return <Link key={href} href={href} className={active?'active':''} onClick={()=>setOpen(false)}><Icon/>{label}{label==='Notifikasi'&&<i>12</i>}</Link>})}</nav>
+   <footer><b>DPM FIPP UNIMA</b><small>Dewan Perwakilan Mahasiswa<br/>Fakultas Ilmu Pendidikan dan Psikologi<br/>Universitas Negeri Manado</small></footer>
+  </aside>
+  <section><header className="v4-admin-top"><div><button onClick={()=>setOpen(true)}><Menu/></button><Link href="/admin/dashboard">Beranda</Link><span>›</span><p>{names[pathname]??'Portal Admin'}</p></div><div><span><ShieldCheck/> Super Admin</span><button><Bell/><i>12</i></button><button><Menu/></button></div></header>{children}<footer className="v4-admin-foot">© 2026 DPM FIPP UNIMA. Semua hak dilindungi.<span>Versi 1.0.0</span></footer></section>
+ </main>
 }

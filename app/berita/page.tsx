@@ -1,9 +1,2 @@
-import Link from 'next/link';
-import { ArrowRight, CalendarDays, Search, SlidersHorizontal } from 'lucide-react';
-import { PortalHeader } from '@/components/portal-header';
-import { PublicFooter } from '@/components/public-footer';
-import { publications } from '@/lib/content/publications';
-
-export default function BeritaPage() {
-  return <main><PortalHeader /><section className="listing-hero"><div className="shell"><span className="form-eyebrow">PUSAT INFORMASI</span><h1>Publikasi & kerja kelembagaan.</h1><p>Temukan kajian, berita, laporan pengawasan, program, dan arsip resmi DPM FIPP UNIMA.</p><form className="listing-search" action="/search"><Search /><label className="sr-only" htmlFor="q">Cari publikasi</label><input id="q" name="q" placeholder="Cari judul atau topik…" /><button>Cari</button></form></div></section><section className="shell listing-layout"><aside className="filters"><div><SlidersHorizontal size={17} /><b>Jenis publikasi</b></div><Link href="/search?type=BERITA">Berita</Link><Link href="/search?type=D-SIGHT">D-SIGHT</Link><Link href="/search?type=D-TRACE">D-TRACE</Link><Link href="/search?type=D-DAR">D-DAR</Link><Link href="/search?type=PROGRAM">Program</Link><Link href="/berita">Reset filter</Link></aside><div><div className="result-bar"><p>Menampilkan <b>{publications.length} publikasi terbaru</b></p></div><div className="article-list">{publications.map((item,index)=><article key={item.slug}><div className={`list-mark list-mark-${(index%3)+1}`}><span>0{index+1}</span></div><div><span className="list-type">{item.type}</span><h2><Link href={`/berita/${item.slug}`}>{item.title}</Link></h2><p>{item.summary}</p><div className="article-meta"><span><CalendarDays /> {item.date}</span><Link href={`/berita/${item.slug}`}>Baca publikasi <ArrowRight /></Link></div></div></article>)}</div></div></section><PublicFooter /></main>;
-}
+import { V4Publications } from '@/components/v4-public';
+export default function Publications(){return <V4Publications/>}

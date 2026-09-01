@@ -1,3 +1,2 @@
-import { Inbox } from 'lucide-react';
-import { AdminModulePage } from '@/components/admin-module-page';
-export default function Page(){return <AdminModulePage eyebrow="LAYANAN ASPIRASI" title="Antrean D-DAS" description="Triase aspirasi, penugasan internal, pembaruan status, dan timeline aman untuk pengirim." icon={Inbox} metrics={[{value:'12',label:'Baru',note:'Belum ditriase'},{value:'9',label:'Dalam proses',note:'Sudah ditugaskan'},{value:'3',label:'Mendekati SLA',note:'Perlu perhatian'}]} actions={[{title:'Triase aspirasi baru',description:'Dua belas kiriman perlu klasifikasi awal.'},{title:'Periksa risiko SLA',description:'Tiga kasus mendekati target respons.'}]} />}
+import { DdasCaseV4 } from '@/components/v4-admin';
+export default function Page(){return <DdasCaseV4/>}
