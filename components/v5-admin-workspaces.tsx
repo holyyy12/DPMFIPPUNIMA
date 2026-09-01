@@ -11,15 +11,34 @@ import {
   FileText,
   History,
   Image,
+  Images,
   LockKeyhole,
   Mail,
   Plus,
   Save,
   Search,
   ShieldCheck,
+  SquareArrowOutUpRight,
   Upload,
   Vote,
 } from 'lucide-react';
+import Link from 'next/link';
+import { programs } from '@/lib/site-content';
+
+const PROGRAM_DRAFTS_KEY = 'dpm-fipp-program-drafts-v1';
+
+type ProgramDraft = (typeof programs)[number] & {
+  updateNote: string;
+  updatedAt: string;
+};
+
+function initialProgramDrafts(): ProgramDraft[] {
+  return programs.map((program) => ({
+    ...program,
+    updateNote: 'Program berjalan sesuai rencana kerja periode 2026–2027.',
+    updatedAt: '20 Mei 2026',
+  }));
+}
 
 type OrganizationMember = {
   id: number;
@@ -229,6 +248,122 @@ export function SiteContentAdmin() {
             ))}
           </section>
         </aside>
+      </div>
+    </div>
+  );
+}
+
+export function ProgramsAdmin() {
+  const [items, setItems] = useState<ProgramDraft[]>(initialProgramDrafts);
+  const [selectedSlug, setSelectedSlug] = useState(programs[0].slug);
+  const [status, setStatus] = useState('Perubahan belum disimpan.');
+
+  const selected = items.find((item) => item.slug === selectedSlug) ?? items[0];
+
+  const updateSelected = (field: keyof ProgramDraft, value: string | number) => {
+    setItems((current) =>
+      current.map((item) =>
+        item.slug === selectedSlug ? { ...item, [field]: value } : item,
+      ),
+    );
+    setStatus('Perubahan belum disimpan.');
+  };
+
+  const saveTemporary = () => {
+    const next = items.map((item) =>
+      item.slug === selectedSlug
+        ? {
+            ...item,
+            updatedAt: new Intl.DateTimeFormat('id-ID', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            }).format(new Date()),
+          }
+        : item,
+    );
+    setItems(next);
+    localStorage.setItem(PROGRAM_DRAFTS_KEY, JSON.stringify(next));
+    setStatus('Tersimpan sementara di perangkat ini dan tampil pada halaman publik di browser yang sama.');
+  };
+
+  const restoreTemporary = () => {
+    const stored = localStorage.getItem(PROGRAM_DRAFTS_KEY);
+    if (!stored) {
+      setStatus('Belum ada pembaruan sementara pada perangkat ini.');
+      return;
+    }
+    try {
+      setItems(JSON.parse(stored) as ProgramDraft[]);
+      setStatus('Pembaruan sementara berhasil dimuat.');
+    } catch {
+      setStatus('Data sementara tidak dapat dibaca.');
+    }
+  };
+
+  return (
+    <div className="v4-admin-content v7-program-admin">
+      <Title
+        title="Program Kerja"
+        copy="Perbarui progres, indikator keberhasilan, catatan, dan publikasi media setiap program."
+        action="Simpan Sementara"
+      />
+      <div className="v7-storage-note" role="note">
+        <ShieldCheck />
+        <div>
+          <b>Mode sementara — belum terhubung ke penyimpanan pusat</b>
+          <p>Perubahan hanya berlaku pada browser dan perangkat ini. Setelah penyimpanan pusat aktif, tombol simpan akan menerbitkan pembaruan untuk semua pengunjung.</p>
+        </div>
+      </div>
+      <div className="v7-program-layout">
+        <aside className="v4-panel v7-program-list">
+          <header>
+            <div><h2>Daftar Program</h2><p>Pilih program yang akan diperbarui.</p></div>
+          </header>
+          {items.map((item) => (
+            <button
+              type="button"
+              key={item.slug}
+              className={item.slug === selectedSlug ? 'active' : ''}
+              onClick={() => { setSelectedSlug(item.slug); setStatus('Perubahan belum disimpan.'); }}
+            >
+              <span style={{ backgroundImage: `url(${item.image})` }} />
+              <div><b>{item.title}</b><small>{item.unit} · Progres {item.progress}%</small></div>
+            </button>
+          ))}
+        </aside>
+        <main className="v4-panel v5-admin-form v7-program-editor">
+          <header>
+            <div><h2>Perbarui Program</h2><p>{selected.title}</p></div>
+            <Link href={`/program/${selected.slug}`} target="_blank"><SquareArrowOutUpRight /> Pratinjau Publik</Link>
+          </header>
+          <div className="v5-form-grid">
+            <label>Judul program<input value={selected.title} onChange={(event) => updateSelected('title', event.target.value)} /></label>
+            <label>Unit penanggung jawab<input value={selected.unit} onChange={(event) => updateSelected('unit', event.target.value)} /></label>
+          </div>
+          <label>Ringkasan program<textarea value={selected.copy} onChange={(event) => updateSelected('copy', event.target.value)} /></label>
+          <div className="v7-progress-fields">
+            <label>
+              <span>Persentase progres <b>{selected.progress}%</b></span>
+              <input type="range" min="0" max="100" value={selected.progress} onChange={(event) => updateSelected('progress', Number(event.target.value))} />
+            </label>
+            <label>
+              <span>Indikator keberhasilan <b>{selected.success}%</b></span>
+              <input type="range" min="0" max="100" value={selected.success} onChange={(event) => updateSelected('success', Number(event.target.value))} />
+            </label>
+          </div>
+          <label>Catatan pembaruan<textarea value={selected.updateNote} onChange={(event) => updateSelected('updateNote', event.target.value)} placeholder="Jelaskan capaian, kendala, atau langkah berikutnya." /></label>
+          <div className="v5-form-grid">
+            <label>Jenis publikasi<select value={selected.media} onChange={(event) => updateSelected('media', event.target.value)}><option value="photo">Foto</option><option value="video">Video</option><option value="gallery">Galeri</option></select></label>
+            <label>URL foto/video<input value={selected.image} onChange={(event) => updateSelected('image', event.target.value)} placeholder="https://..." /></label>
+          </div>
+          <div className="v7-media-preview"><span style={{ backgroundImage: `url(${selected.image})` }}><Images /></span><p><b>Pratinjau media</b><small>Gunakan URL gambar publik. Unggah file permanen akan tersedia setelah penyimpanan media terhubung.</small></p></div>
+          <footer className="v7-editor-actions">
+            <p>{status}</p>
+            <button type="button" onClick={restoreTemporary}><History /> Muat Data Sementara</button>
+            <button type="button" className="primary" onClick={saveTemporary}><Save /> Perbarui Progres</button>
+          </footer>
+        </main>
       </div>
     </div>
   );

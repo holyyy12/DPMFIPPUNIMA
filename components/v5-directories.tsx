@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
+  ArrowLeft,
   BarChart3,
+  CheckCircle2,
   Download,
   FileArchive,
   FileText,
@@ -44,6 +46,12 @@ function Hero({
   );
 }
 export function ProgramsPage() {
+  const [visiblePrograms, setVisiblePrograms] = useState(programs);
+  useEffect(() => {
+    const stored = localStorage.getItem('dpm-fipp-program-drafts-v1');
+    if (!stored) return;
+    try { setVisiblePrograms(JSON.parse(stored)); } catch { /* keep published defaults */ }
+  }, []);
   return (
     <PublicFrame>
       <Hero
@@ -52,7 +60,7 @@ export function ProgramsPage() {
         copy="Ikuti tujuan, publikasi foto/video, progres pelaksanaan, dan ukuran keberhasilan setiap program DPM FIPP UNIMA."
       />
       <section className="v5-shell v5-program-grid">
-        {programs.map((p) => (
+        {visiblePrograms.map((p) => (
           <article key={p.slug}>
             <div
               className="v5-program-media"
@@ -88,6 +96,29 @@ export function ProgramsPage() {
       </section>
     </PublicFrame>
   );
+}
+
+export function ProgramDetailPage({ slug }: { slug: string }) {
+  const published = programs.find((item) => item.slug === slug) ?? programs[0];
+  const [program, setProgram] = useState(published);
+  const [updateNote, setUpdateNote] = useState('Program berjalan sesuai rencana kerja periode 2026–2027.');
+  const [updatedAt, setUpdatedAt] = useState('20 Mei 2026');
+
+  useEffect(() => {
+    const stored = localStorage.getItem('dpm-fipp-program-drafts-v1');
+    if (!stored) return;
+    try {
+      const drafts = JSON.parse(stored) as Array<typeof published & { updateNote?: string; updatedAt?: string }>;
+      const draft = drafts.find((item) => item.slug === slug);
+      if (draft) {
+        setProgram(draft);
+        if (draft.updateNote) setUpdateNote(draft.updateNote);
+        if (draft.updatedAt) setUpdatedAt(draft.updatedAt);
+      }
+    } catch { /* keep published defaults */ }
+  }, [slug, published]);
+
+  return <PublicFrame><section className="v5-shell v5-program-detail"><Link href="/program"><ArrowLeft/> Semua Program</Link><div className="v5-program-detail-hero" style={{backgroundImage:`linear-gradient(90deg,#043d30dd,#043d3040),url(${program.image})`}}><span>{program.media==='video'?<Play/>:<Images/>}{program.unit}</span><h1>{program.title}</h1><p>{program.copy}</p></div><div className="v5-program-detail-grid"><article><h2>Publikasi Program</h2><p>{updateNote}</p><div className="v5-inline-gallery">{programs.map(item=><span key={item.slug} style={{backgroundImage:`url(${item.image})`}}/>)}</div></article><aside><h2>Progres</h2><strong>{program.progress}%</strong><i><em style={{width:`${program.progress}%`}}/></i><p><CheckCircle2/> Indikator keberhasilan: <b>{program.success}%</b></p><p><CheckCircle2/> Pembaruan terakhir: {updatedAt}</p></aside></div></section></PublicFrame>;
 }
 
 export function SightPage() {
