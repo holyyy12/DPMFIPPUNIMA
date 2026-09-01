@@ -48,9 +48,18 @@ function Hero({
 export function ProgramsPage() {
   const [visiblePrograms, setVisiblePrograms] = useState(programs);
   useEffect(() => {
-    const stored = localStorage.getItem('dpm-fipp-program-drafts-v1');
-    if (!stored) return;
-    try { setVisiblePrograms(JSON.parse(stored)); } catch { /* keep published defaults */ }
+    let active = true;
+    fetch('/api/programs')
+      .then(async (response) =>
+        (await response.json()) as { ok: boolean; data?: typeof programs },
+      )
+      .then((payload) => {
+        if (active && payload.ok && payload.data?.length) {
+          setVisiblePrograms(payload.data);
+        }
+      })
+      .catch(() => { /* retain the resilient published fallback */ });
+    return () => { active = false; };
   }, []);
   return (
     <PublicFrame>
@@ -105,17 +114,29 @@ export function ProgramDetailPage({ slug }: { slug: string }) {
   const [updatedAt, setUpdatedAt] = useState('20 Mei 2026');
 
   useEffect(() => {
-    const stored = localStorage.getItem('dpm-fipp-program-drafts-v1');
-    if (!stored) return;
-    try {
-      const drafts = JSON.parse(stored) as Array<typeof published & { updateNote?: string; updatedAt?: string }>;
-      const draft = drafts.find((item) => item.slug === slug);
-      if (draft) {
-        setProgram(draft);
-        if (draft.updateNote) setUpdateNote(draft.updateNote);
-        if (draft.updatedAt) setUpdatedAt(draft.updatedAt);
-      }
-    } catch { /* keep published defaults */ }
+    let active = true;
+    fetch('/api/programs')
+      .then(async (response) =>
+        (await response.json()) as {
+          ok: boolean;
+          data?: Array<typeof published & { updateNote?: string; updatedAt?: string }>;
+        },
+      )
+      .then((payload) => {
+        const item = payload.data?.find((entry) => entry.slug === slug);
+        if (!active || !payload.ok || !item) return;
+        setProgram(item);
+        if (item.updateNote) setUpdateNote(item.updateNote);
+        if (item.updatedAt) {
+          setUpdatedAt(new Intl.DateTimeFormat('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          }).format(new Date(item.updatedAt)));
+        }
+      })
+      .catch(() => { /* retain the resilient published fallback */ });
+    return () => { active = false; };
   }, [slug, published]);
 
   return <PublicFrame><section className="v5-shell v5-program-detail"><Link href="/program"><ArrowLeft/> Semua Program</Link><div className="v5-program-detail-hero" style={{backgroundImage:`linear-gradient(90deg,#043d30dd,#043d3040),url(${program.image})`}}><span>{program.media==='video'?<Play/>:<Images/>}{program.unit}</span><h1>{program.title}</h1><p>{program.copy}</p></div><div className="v5-program-detail-grid"><article><h2>Publikasi Program</h2><p>{updateNote}</p><div className="v5-inline-gallery">{programs.map(item=><span key={item.slug} style={{backgroundImage:`url(${item.image})`}}/>)}</div></article><aside><h2>Progres</h2><strong>{program.progress}%</strong><i><em style={{width:`${program.progress}%`}}/></i><p><CheckCircle2/> Indikator keberhasilan: <b>{program.success}%</b></p><p><CheckCircle2/> Pembaruan terakhir: {updatedAt}</p></aside></div></section></PublicFrame>;

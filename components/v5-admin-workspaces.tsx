@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Activity,
   BarChart3,
@@ -24,8 +24,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { programs } from '@/lib/site-content';
-
-const PROGRAM_DRAFTS_KEY = 'dpm-fipp-program-drafts-v1';
 
 type ProgramDraft = (typeof programs)[number] & {
   updateNote: string;
@@ -95,10 +93,14 @@ function Title({
   title,
   copy,
   action = 'Simpan Perubahan',
+  onAction,
+  actionDisabled = false,
 }: {
   title: string;
   copy: string;
   action?: string;
+  onAction?: () => void;
+  actionDisabled?: boolean;
 }) {
   return (
     <header className="v4-admin-title">
@@ -107,7 +109,12 @@ function Title({
         <p>{copy}</p>
       </div>
       <div>
-        <button className="primary">
+        <button
+          type="button"
+          className="primary"
+          onClick={onAction}
+          disabled={actionDisabled}
+        >
           <Save />
           {action}
         </button>
@@ -256,7 +263,8 @@ export function SiteContentAdmin() {
 export function ProgramsAdmin() {
   const [items, setItems] = useState<ProgramDraft[]>(initialProgramDrafts);
   const [selectedSlug, setSelectedSlug] = useState(programs[0].slug);
-  const [status, setStatus] = useState('Perubahan belum disimpan.');
+  const [status, setStatus] = useState('Memuat data dari penyimpanan pusat…');
+  const [isSaving, setIsSaving] = useState(false);
 
   const selected = items.find((item) => item.slug === selectedSlug) ?? items[0];
 
@@ -269,35 +277,53 @@ export function ProgramsAdmin() {
     setStatus('Perubahan belum disimpan.');
   };
 
-  const saveTemporary = () => {
-    const next = items.map((item) =>
-      item.slug === selectedSlug
-        ? {
-            ...item,
-            updatedAt: new Intl.DateTimeFormat('id-ID', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            }).format(new Date()),
-          }
-        : item,
-    );
-    setItems(next);
-    localStorage.setItem(PROGRAM_DRAFTS_KEY, JSON.stringify(next));
-    setStatus('Tersimpan sementara di perangkat ini dan tampil pada halaman publik di browser yang sama.');
+  const loadPrograms = async () => {
+    setStatus('Memuat data dari penyimpanan pusat…');
+    try {
+      const response = await fetch('/api/programs', { cache: 'no-store' });
+      const payload = (await response.json()) as {
+        ok: boolean;
+        data?: ProgramDraft[];
+        message?: string;
+      };
+      if (!response.ok || !payload.ok || !payload.data?.length) {
+        throw new Error(payload.message ?? 'Data program belum tersedia.');
+      }
+      setItems(payload.data);
+      setSelectedSlug((current) =>
+        payload.data?.some((item) => item.slug === current)
+          ? current
+          : payload.data?.[0]?.slug ?? current,
+      );
+      setStatus('Data terbaru berhasil dimuat dari penyimpanan pusat.');
+    } catch {
+      setStatus('Penyimpanan pusat belum dapat dijangkau. Data bawaan tetap ditampilkan.');
+    }
   };
 
-  const restoreTemporary = () => {
-    const stored = localStorage.getItem(PROGRAM_DRAFTS_KEY);
-    if (!stored) {
-      setStatus('Belum ada pembaruan sementara pada perangkat ini.');
-      return;
-    }
+  useEffect(() => {
+    void loadPrograms();
+  }, []);
+
+  const saveProgram = async () => {
+    setIsSaving(true);
+    setStatus('Menyimpan pembaruan…');
     try {
-      setItems(JSON.parse(stored) as ProgramDraft[]);
-      setStatus('Pembaruan sementara berhasil dimuat.');
-    } catch {
-      setStatus('Data sementara tidak dapat dibaca.');
+      const response = await fetch('/api/programs', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(selected),
+      });
+      const payload = (await response.json()) as { ok: boolean; message?: string };
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.message ?? 'Pembaruan gagal disimpan.');
+      }
+      await loadPrograms();
+      setStatus('Progres tersimpan dan langsung tersedia pada portal publik.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Pembaruan gagal disimpan.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -306,13 +332,15 @@ export function ProgramsAdmin() {
       <Title
         title="Program Kerja"
         copy="Perbarui progres, indikator keberhasilan, catatan, dan publikasi media setiap program."
-        action="Simpan Sementara"
+        action={isSaving ? 'Menyimpan…' : 'Simpan Progres'}
+        onAction={() => void saveProgram()}
+        actionDisabled={isSaving}
       />
       <div className="v7-storage-note" role="note">
         <ShieldCheck />
         <div>
-          <b>Mode sementara — belum terhubung ke penyimpanan pusat</b>
-          <p>Perubahan hanya berlaku pada browser dan perangkat ini. Setelah penyimpanan pusat aktif, tombol simpan akan menerbitkan pembaruan untuk semua pengunjung.</p>
+          <b>Penyimpanan pusat aktif</b>
+          <p>Perubahan disimpan di Supabase dan ditampilkan kepada seluruh pengunjung setelah berhasil disimpan.</p>
         </div>
       </div>
       <div className="v7-program-layout">
@@ -360,8 +388,8 @@ export function ProgramsAdmin() {
           <div className="v7-media-preview"><span style={{ backgroundImage: `url(${selected.image})` }}><Images /></span><p><b>Pratinjau media</b><small>Gunakan URL gambar publik. Unggah file permanen akan tersedia setelah penyimpanan media terhubung.</small></p></div>
           <footer className="v7-editor-actions">
             <p>{status}</p>
-            <button type="button" onClick={restoreTemporary}><History /> Muat Data Sementara</button>
-            <button type="button" className="primary" onClick={saveTemporary}><Save /> Perbarui Progres</button>
+            <button type="button" onClick={() => void loadPrograms()} disabled={isSaving}><History /> Muat Ulang Data</button>
+            <button type="button" className="primary" onClick={() => void saveProgram()} disabled={isSaving}><Save /> {isSaving ? 'Menyimpan…' : 'Perbarui Progres'}</button>
           </footer>
         </main>
       </div>
