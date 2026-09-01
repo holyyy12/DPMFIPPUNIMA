@@ -48,6 +48,9 @@ export function PublicHeader() {
               {item.label}
             </Link>
           ))}
+          <Link href="/program" onClick={() => setOpen(false)}>Program Kerja</Link>
+          <Link href="/ormawa" onClick={() => setOpen(false)}>ORMAWA</Link>
+          <Link href="/survei" onClick={() => setOpen(false)}>Survei</Link>
           <Link className="mobile-admin-link" href="/admin/dashboard" onClick={() => setOpen(false)}>Buka Portal Admin <ArrowRight /></Link>
         </div>
       </nav>

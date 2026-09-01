@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, BookOpen, CircleGauge, FilePenLine, Inbox, Landmark, Menu, MessageSquare, Search, Settings, Users, X } from 'lucide-react';
+import { Bell, BookOpen, CircleGauge, FilePenLine, Inbox, Landmark, LogOut, Menu, MessageSquare, Search, Settings, Users, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const groups = [
   { label: 'RUANG KERJA', items: [
@@ -30,6 +30,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const title = pageNames[pathname] ?? 'Portal Admin';
+  useEffect(()=>{if(pathname==='/admin/login'||pathname==='/admin/mfa')return;void(async()=>{const response=await fetch('/api/admin/auth/session',{cache:'no-store'});if(!response.ok)window.location.assign('/admin/login');else{const result=await response.json() as {aal?:string};if(result.aal!=='aal2')window.location.assign('/admin/mfa')}})()},[pathname]);
+  if (pathname === '/admin/login' || pathname === '/admin/mfa') return children;
 
   return (
     <main className={`admin-shell${open ? ' menu-open' : ''}`}>
@@ -51,7 +53,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </div>
           ))}
         </nav>
-        <div className="admin-user"><span>SA</span><p><b>Super Admin</b><small>Akses terverifikasi</small></p></div>
+        <div className="admin-user"><span>PV</span><p><b>Preview Admin</b><small>MFA produksi belum terhubung</small></p></div>
       </aside>
       <section className="admin-main">
         <header className="admin-topbar">
@@ -59,7 +61,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <button className="admin-menu-button" type="button" aria-label="Buka menu admin" aria-expanded={open} aria-controls="admin-navigation" onClick={() => setOpen(true)}><Menu /></button>
             <div><p>PORTAL ADMIN</p><h1>{title}</h1></div>
           </div>
-          <div className="admin-tools"><label><Search /><input aria-label="Cari atau buka perintah" placeholder="Cari atau buka perintah…" /><kbd>Ctrl K</kbd></label><button aria-label="Notifikasi"><Bell /></button></div>
+          <div className="admin-tools"><label><Search /><input aria-label="Cari atau buka perintah" placeholder="Cari atau buka perintah…" /><kbd>Ctrl K</kbd></label><button aria-label="Notifikasi"><Bell /></button><button aria-label="Keluar dari portal admin" onClick={async()=>{await fetch('/api/admin/auth/logout',{method:'POST'});window.location.assign('/admin/login')}}><LogOut /></button></div>
         </header>
         {children}
       </section>
