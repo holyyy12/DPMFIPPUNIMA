@@ -76,10 +76,14 @@ export async function GET() {
       };
     });
 
-    return Response.json(
-      { ok: true, data },
-      { headers: { 'Cache-Control': 'public, max-age=30, stale-while-revalidate=120' } },
-    );
+return Response.json(
+  { ok: true, data },
+  {
+    headers: {
+      'Cache-Control': 'private, no-store, max-age=0',
+    },
+  },
+);
   } catch {
     return Response.json(
       { ok: false, message: 'Data program belum tersedia.' },
