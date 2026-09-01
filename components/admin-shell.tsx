@@ -1,12 +1,12 @@
 'use client';
 import Link from 'next/link';
-import { Bell, BookOpen, Building2, ChartNoAxesCombined, CircleGauge, FilePenLine, Inbox, LayoutGrid, LockKeyhole, Menu, MessageSquare, ScrollText, Settings2, ShieldCheck, Users, X } from 'lucide-react';
+import { Bell, BookOpen, Building2, ChartNoAxesCombined, CircleGauge, FileArchive, FilePenLine, Image, Inbox, LayoutGrid, Menu, MessageSquare, ScrollText, ShieldCheck, Users, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const items=[
- ['/admin/dashboard','Dashboard',LayoutGrid],['/admin/ddas','D-DAS',Inbox],['/admin/insight','D-SIGHT',ChartNoAxesCombined],
- ['/admin/trace','D-TRACE',CircleGauge],['/admin/cms','Publikasi',FilePenLine],['/admin/media','Media',BookOpen],
+ ['/admin/dashboard','Dashboard',LayoutGrid],['/admin/site','Tampilan Situs & Aset',Image],['/admin/ddas','D-DAS',Inbox],['/admin/insight','D-SIGHT',ChartNoAxesCombined],
+ ['/admin/trace','D-TRACE',CircleGauge],['/admin/archive','D-DAR',FileArchive],['/admin/cms','Publikasi',FilePenLine],['/admin/media','Media',BookOpen],
  ['/admin/comments','Komentar',MessageSquare],['/admin/notifications','Notifikasi',Bell],['/admin/organization','Periode & Organisasi',Building2],
  ['/admin/iam','Pengguna, Role & Permission',Users],['/admin/permission','Permission',ShieldCheck],['/admin/audit','Audit Log',ScrollText],
 ] as const;

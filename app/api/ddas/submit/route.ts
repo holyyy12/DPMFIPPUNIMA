@@ -15,9 +15,10 @@ export async function POST(request: Request) {
     if (!pepper || !encryptionKey || pepper.includes('SET_IN_') || encryptionKey.includes('SET_IN_')) throw new Error('BACKEND_NOT_CONFIGURED');
     const receipt = await deriveReceipt(input.idempotencyKey, pepper);
     const secretHash = await hmac(receipt.secret, pepper);
-    const bodyCiphertext = await encrypt(JSON.stringify({ category:input.category, body:input.body }), encryptionKey);
-    const contactCiphertext = input.email ? await encrypt(input.email.toLowerCase(), encryptionKey) : null;
-    const contactHash = input.email ? await hmac(input.email.toLowerCase(), pepper) : null;
+    const bodyCiphertext = await encrypt(JSON.stringify({ category:input.category, body:input.body, submissionMode:input.submissionMode, anonymityReason:input.anonymityReason, attachments:input.attachments }), encryptionKey);
+    const contactValue = JSON.stringify({ email:input.email?.toLowerCase()||null, whatsapp:input.whatsapp||null });
+    const contactCiphertext = input.email || input.whatsapp ? await encrypt(contactValue, encryptionKey) : null;
+    const contactHash = input.email || input.whatsapp ? await hmac(contactValue, pepper) : null;
     await supabaseRpc<Array<{ticket:string;created:boolean}>>('submit_ddas', {
       p_ticket:receipt.ticket, p_tracking_secret_hash:secretHash, p_subject:input.subject,
       p_body_ciphertext:bodyCiphertext, p_idempotency_key:input.idempotencyKey,

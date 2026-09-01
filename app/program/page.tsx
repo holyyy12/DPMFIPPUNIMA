@@ -1,3 +1,2 @@
-import { PublicDirectoryPage } from '@/components/public-directory-page';
-const items=[{label:'ADVOKASI',title:'Serap aspirasi bulanan',description:'Forum konsultasi dan pemetaan kebutuhan mahasiswa setiap bulan.',href:'/ddas/kirim'},{label:'PENGAWASAN',title:'Pemantauan program ORMAWA',description:'Agenda pengawasan, temuan, dan tindak lanjut program organisasi mahasiswa.',href:'/transparansi'},{label:'LEGISLASI',title:'Kajian kebijakan mahasiswa',description:'Penyusunan kajian dan rekomendasi berdasarkan aspirasi serta data.',href:'/berita'}];
-export default function Page(){return <PublicDirectoryPage eyebrow="PROGRAM KERJA" title="Agenda kerja yang dapat diikuti." description="Program, penanggung jawab, periode, progres, dan publikasi hasil dikelola sebagai data kelembagaan." items={items}/>}
+import { ProgramsPage } from '@/components/v5-directories';
+export default function Page(){return <ProgramsPage/>}

@@ -13,7 +13,9 @@ insert into public.permissions(key,resource,action,scope_kind,description,risk_l
 ('iam.read.all','iam','read','all','Read IAM configuration','high'),
 ('iam.update.all','iam','update','all','Manage IAM configuration','critical'),
 ('audit.read.all','audit','read','all','Read append-only audit trail','critical'),
-('settings.update.all','settings','update','all','Manage site configuration','high')
+('settings.update.all','settings','update','all','Manage site configuration','high'),
+('ormawa.update.own','ormawa','update','own','Edit the assigned ORMAWA profile page','normal'),
+('ormawa.publish.own','ormawa','publish','own','Publish the assigned ORMAWA profile after page approval','high')
 on conflict(key) do nothing;
 
 insert into public.roles(key,name,description,system_role) values
@@ -26,8 +28,12 @@ insert into public.roles(key,name,description,system_role) values
 ('ddas_coordinator','D-DAS Coordinator','Coordinate case intake and assignment',true),
 ('ddas_handler','D-DAS Handler','Handle assigned cases',true),
 ('moderator','Moderator','Moderate comments and reports',true),
-('viewer','Viewer','Read-only scoped access',true)
+('ormawa','ORMAWA','Manage an approved organization profile and its program publications',true)
 on conflict(key) do nothing;
+
+insert into public.role_permissions(role_id,permission_id,effect)
+select r.id,p.id,'allow'::public.permission_effect from public.roles r join public.permissions p on p.key in ('ormawa.update.own','ormawa.publish.own','content.read.all','media.create.all') where r.key='ormawa'
+on conflict(role_id,permission_id) do update set effect=excluded.effect;
 
 insert into public.role_permissions(role_id,permission_id,effect)
 select r.id,p.id,'allow'::public.permission_effect from public.roles r cross join public.permissions p where r.key='super_admin'
