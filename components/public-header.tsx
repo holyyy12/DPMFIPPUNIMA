@@ -10,7 +10,7 @@ export function PublicHeader(){
  return <header className="v5-header"><div className="v5-shell v5-navbar">
   <Link href="/" className="v5-brand" onClick={()=>setOpen(false)}><img src="/dpm-crest.png" alt="Lambang DPM FIPP UNIMA"/><span><b>DPM FIPP UNIMA</b><small>Dewan Perwakilan Mahasiswa<br/>Fakultas Ilmu Pendidikan dan Psikologi</small></span></Link>
   <nav className={open?'open':''} aria-label="Navigasi utama">{links.map(([href,label])=><Link href={href} key={href} className={active(href)?'active':''} onClick={()=>setOpen(false)}>{label}</Link>)}</nav>
-  <form className="v5-nav-search" action="/search"><Search/><label className="sr-only" htmlFor="nav-search">Cari informasi</label><input id="nav-search" name="q" placeholder="Cari..."/></form>
+  <form className="v5-nav-search" action="/search"><button type="submit" aria-label="Cari" style={{display:'grid',placeItems:'center',flex:'none',padding:0,border:0,background:'transparent',cursor:'pointer'}}><Search/></button><label className="sr-only" htmlFor="nav-search">Cari informasi</label><input id="nav-search" name="q" placeholder="Cari..."/></form>
   <button className="v5-menu" onClick={()=>setOpen(!open)} aria-expanded={open} aria-label="Buka navigasi">{open?<X/>:<Menu/>}</button>
  </div></header>
 }
