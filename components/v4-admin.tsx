@@ -88,6 +88,15 @@ export function AdminDashboardV4() {
     'Ditindaklanjuti',
     'Selesai',
   ];
+  const dashboardDates = [...new Set(liveCases.map((item) => item[5].split(',')[0]))];
+  const completedCases = data.ddasCases.filter((item) => ['resolved', 'closed', 'rejected_out_of_scope'].includes(item.status)).length;
+  const completionRate = data.ddasCases.length ? Math.round((completedCases / data.ddasCases.length) * 100) : 0;
+  const responseTimes = data.ddasCases.flatMap((item) => {
+    const submitted = new Date(item.submitted_at).getTime();
+    const firstUpdate = item.timeline.map((event) => new Date(event.occurredAt).getTime()).filter((time) => time > submitted).sort((a, b) => a - b)[0];
+    return firstUpdate ? [(firstUpdate - submitted) / 86_400_000] : [];
+  });
+  const averageResponse = responseTimes.length ? `${(responseTimes.reduce((sum, value) => sum + value, 0) / responseTimes.length).toLocaleString('id-ID', { maximumFractionDigits: 1 })} hari` : '0 hari';
   return (
     <div className="v4-admin-content">
       <PageTitle
@@ -141,9 +150,7 @@ export function AdminDashboardV4() {
             aria-label="Saring tanggal aspirasi"
           >
             <option value="Semua">Semua Tanggal</option>
-            <option value="20 Mei">20 Mei 2026</option>
-            <option value="19 Mei">19 Mei 2026</option>
-            <option value="18 Mei">18 Mei 2026</option>
+            {dashboardDates.map((date) => <option value={date} key={date}>{date}</option>)}
           </select>
         </header>
         <div>
@@ -229,11 +236,11 @@ export function AdminDashboardV4() {
             <div className="v4-workflow">
               <span>
                 <small>Rata-rata Waktu Respon</small>
-                <b>1,8 hari</b>
+                <b>{averageResponse}</b>
               </span>
               <span>
                 <small>Tingkat Penyelesaian</small>
-                <b>60%</b>
+                <b>{completionRate}%</b>
               </span>
             </div>
           </section>
@@ -246,7 +253,7 @@ export function AdminDashboardV4() {
 export function CmsEditorV4() {
   const { data, loading, error, message, runAction } = useAdminPortal();
   const [selectedId, setSelectedId] = useState('');
-  const selected = data.contents.find((item) => item.id === selectedId) ?? data.contents[0];
+  const selected = data.contents.find((item) => item.id === selectedId);
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [summary, setSummary] = useState('');
@@ -255,9 +262,15 @@ export function CmsEditorV4() {
   const [language, setLanguage] = useState('id');
   const [fileName, setFileName] = useState('Belum ada media dipilih');
   useEffect(() => {
-    const wanted = new URLSearchParams(location.search).get('id');
+    const params = new URLSearchParams(location.search);
+    const wanted = params.get('id');
+    const requestedType = params.get('type');
     if (wanted) setSelectedId(wanted);
-  }, []);
+    if (!wanted && requestedType) {
+      const match = data.contentTypes.find((item) => item.key === requestedType);
+      if (match) setContentTypeId(match.id);
+    }
+  }, [data.contentTypes]);
   useEffect(() => {
     if (!selected) return;
     setTitle(selected.title); setSlug(selected.slug); setSummary(selected.summary); setContentTypeId(selected.content_type_id ?? '');
@@ -265,6 +278,7 @@ export function CmsEditorV4() {
   }, [selected?.id]);
   const save = (status: 'draft' | 'scheduled' | 'published') => {
     if (!title.trim() || !slug.trim()) return alert('Judul dan slug wajib diisi.');
+    if (!contentTypeId) return alert('Tipe konten wajib dipilih.');
     return runAction('content.save', { id: selected?.id ?? '', title: title.trim(), slug: slug.trim(), summary: summary.trim(), body: { schemaVersion: 1, blocks: [{ type: 'paragraph', text: bodyText }] }, status, contentTypeId, unitId: selected?.unit_id ?? data.units[0]?.id ?? '', language, visibility: 'public' }, status === 'published' ? 'Konten berhasil dipublikasikan.' : status === 'scheduled' ? 'Konten berhasil dijadwalkan.' : 'Draft berhasil disimpan.');
   };
   const exportContent = () => { const blob=new Blob([JSON.stringify({ title,slug,summary,body:bodyText },null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${slug || 'konten'}.json`;a.click();URL.revokeObjectURL(a.href); };
@@ -278,7 +292,12 @@ export function CmsEditorV4() {
             <button onClick={() => void save('draft')}>
               <Save /> Simpan Draft
             </button>
-            <button onClick={() => selected ? window.open(`/publikasi/${selected.slug}`, '_blank', 'noopener,noreferrer') : alert('Simpan konten terlebih dahulu untuk melihat pratinjau.')}>◉ Preview</button>
+            <button onClick={() => {
+              if (!selected) return alert('Simpan konten terlebih dahulu untuk melihat pratinjau.');
+              const key = data.contentTypes.find((item) => item.id === selected.content_type_id)?.key;
+              const href = key === 'program' ? `/program/${selected.slug}` : key === 'd-trace' ? '/d-trace' : key === 'd-dar' ? '/d-dar' : `/berita/${selected.slug}`;
+              window.open(href, '_blank', 'noopener,noreferrer');
+            }}>◉ Preview</button>
             <button onClick={() => void save('scheduled')}>
               <CalendarDays /> Jadwalkan
             </button>
@@ -355,15 +374,16 @@ export function CmsEditorV4() {
           <div className="v4-featured">
             <Image />
             <span>
-              literasi-digital-ai-featured.jpg
-              <small>1200 × 628 px · 240 KB</small>
+              {fileName}
+              <small>{fileName === 'Belum ada media dipilih' ? 'Pilih media dari perangkat Anda.' : 'Media dipilih dan siap diunggah melalui pustaka Media.'}</small>
             </span>
           </div>
           <h3>Gambar Dalam Konten / Galeri</h3>
           <div className="v4-editor-images">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <span key={i}>{i}</span>
+            {data.media.slice(0, 6).map((item, index) => (
+              <span key={item.id} title={item.original_filename}>{index + 1}</span>
             ))}
+            {!data.media.length && <small>Belum ada media pada database.</small>}
           </div>
           <input id="cms-media-file" type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" hidden onChange={(event) => setFileName(event.target.files?.[0]?.name ?? 'Belum ada media dipilih')} />
           <button onClick={() => document.getElementById('cms-media-file')?.click()}>
@@ -381,21 +401,14 @@ export function CmsEditorV4() {
         <aside>
           <section className="v4-panel v4-preview">
             <h2>Pratinjau Konten</h2>
-            <Badge>BERITA</Badge>
+            <Badge>{data.contentTypes.find((item) => item.id === contentTypeId)?.name?.toUpperCase() ?? 'TIPE BELUM DIPILIH'}</Badge>
             <h3>{title || 'Judul konten'}</h3>
             <p>{summary || 'Ringkasan konten akan tampil di sini.'}</p>
             <small>{data.me?.name ?? 'Administrator'}　　{fileName}</small>
           </section>
           <section className="v4-panel">
             <h2>Revisi & Riwayat</h2>
-            {['v4　Published', 'v3　Scheduled', 'v2　Draft', 'v1　Draft'].map(
-              (x) => (
-                <p key={x}>
-                  ●　{x}
-                  <small>　20 Mei 2026</small>
-                </p>
-              ),
-            )}
+            {selected ? <p>●　{selected.status}<small>　{new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(selected.updated_at))}</small></p> : <p>Belum ada revisi untuk konten baru.</p>}
           </section>
           <section className="v4-panel v4-danger">
             <h2>Aksi Lanjutan</h2>
@@ -453,18 +466,18 @@ export function DdasCaseV4() {
           <section className="v4-panel">
             <h2>Ringkasan Aspirasi (Publik)</h2>
             <p>{current?.subject ?? 'Belum ada ringkasan aspirasi.'}</p>
-            <div className="v4-mini-grid">
+          <div className="v4-mini-grid">
               <span>
                 Dibuat oleh<b>Pengguna (Disamarkan)</b>
               </span>
               <span>
-                Periode<b>2026–2027 Ganjil</b>
+                Periode<b>{data.periods.find((item) => item.is_current)?.name ?? 'Belum diatur'}</b>
               </span>
               <span>
-                Lokasi<b>Fakultas Ilmu Pendidikan</b>
+                Lokasi<b>Tidak dicatat pada ringkasan publik</b>
               </span>
               <span>
-                Lampiran Publik<b>1 file</b>
+                Lampiran Publik<b>Tidak ada data lampiran publik</b>
               </span>
             </div>
           </section>
@@ -535,7 +548,7 @@ export function DdasCaseV4() {
             <h2>Metadata Kasus</h2>
             <p>ID Internal　{current?.id ?? '—'}</p>
             <p>Sumber　Web Portal D-DAS</p>
-            <p>Perangkat　Chrome / Windows</p>
+            <p>Perangkat　Tidak disimpan pada snapshot admin</p>
             <p>Klasifikasi　Publik (Tersanitasi)</p>
           </section>
         </aside>
@@ -687,7 +700,7 @@ export function CommentsV4() {
           </h2>
           <article>
             <b>😎　{active.author}</b>
-            <small>20 Mei 2026 10:23</small>
+            <small>{active.date}</small>
             <p>{active.body}</p>
           </article>
           <p>{replies.length} balasan</p>

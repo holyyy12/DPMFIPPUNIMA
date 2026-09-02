@@ -366,7 +366,7 @@ export function ProgramsAdmin() {
 
 export function InsightAdmin() {
   const { data, loading, error } = useAdminPortal();
-  const studies = data.contents.filter((item) => ['study', 'kajian', 'news'].includes(item.content_type ?? ''));
+  const studies = data.contents.filter((item) => ['d-sight', 'berita'].includes(item.content_type ?? ''));
   const surveys = data.surveys;
   const openEditor = (id?: string, type?: string) => location.assign(`/admin/cms?${new URLSearchParams({ ...(id ? { id } : {}), ...(type ? { type } : {}) })}`);
   return (
@@ -375,7 +375,7 @@ export function InsightAdmin() {
         title="D-SIGHT"
         copy="Kelola kajian, survei, berita berbasis isu, serta ringkasan hasil sementara."
         action="Buat Konten D-SIGHT"
-        onAction={() => openEditor(undefined, 'study')}
+        onAction={() => openEditor(undefined, 'd-sight')}
       />
       {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
       <div className="v4-admin-stats">
@@ -389,7 +389,7 @@ export function InsightAdmin() {
         <Metric
           icon={FileText}
           label="Berita Isu"
-          value={String(data.contents.filter((x) => x.content_type === 'news' && x.status === 'published').length)}
+          value={String(data.contents.filter((x) => x.content_type === 'berita' && x.status === 'published').length)}
           note="Berita terbit"
         />
       </div>
@@ -400,7 +400,7 @@ export function InsightAdmin() {
               <h2>Daftar Kajian</h2>
               <p>Draft, review, dan publikasi kajian.</p>
             </div>
-            <button className="primary" onClick={() => openEditor(undefined, 'study')}>
+            <button className="primary" onClick={() => openEditor(undefined, 'd-sight')}>
               <Plus /> Tambah Kajian
             </button>
           </header>
@@ -449,7 +449,7 @@ export function InsightAdmin() {
 export function TraceAdmin() {
   const { data, loading, error } = useAdminPortal();
   const records = data.contents.filter((item) => ['trace', 'd-trace', 'internal_publication'].includes(item.content_type ?? ''));
-  const edit = (id?: string) => location.assign(`/admin/cms?type=trace${id ? `&id=${id}` : ''}`);
+  const edit = (id?: string) => location.assign(`/admin/cms?type=d-trace${id ? `&id=${id}` : ''}`);
   return (
     <div className="v4-admin-content">
       <Title
@@ -522,7 +522,7 @@ export function TraceAdmin() {
 export function ArchiveAdmin() {
   const { data, loading, error } = useAdminPortal();
   const archives = data.contents.filter((item) => ['archive', 'd-dar', 'document'].includes(item.content_type ?? ''));
-  const edit = (id?: string) => location.assign(`/admin/cms?type=archive${id ? `&id=${id}` : ''}`);
+  const edit = (id?: string) => location.assign(`/admin/cms?type=d-dar${id ? `&id=${id}` : ''}`);
   return (
     <div className="v4-admin-content">
       <Title

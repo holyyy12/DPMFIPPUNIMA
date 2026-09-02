@@ -19,52 +19,10 @@ import { PublicHeader } from './public-header';
 import { PublicFooter } from './public-footer';
 import { PublicComments } from './public-comments';
 import { DdasWorkspace } from './ddas-workspace';
-import { campusHero, news, ormawa, studies } from '@/lib/site-content';
+import { usePublicPortal } from './use-public-portal';
+import { formatPublicDate, publicAssetUrl } from '@/lib/public-portal';
 
-const organizationMembers = [
-  {
-    role: 'Ketua Umum',
-    name: 'Reynold R. Wuisan',
-    unit: 'Pimpinan',
-    image:
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=240&q=80',
-  },
-  {
-    role: 'Sekretaris Umum',
-    name: 'Angelica M. Tampi',
-    unit: 'Sekretariat',
-    image:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=240&q=80',
-  },
-  {
-    role: 'Ketua Komisi 1',
-    name: 'Michael P. Langi',
-    unit: 'Legislasi & Kebijakan',
-    image:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=240&q=80',
-  },
-  {
-    role: 'Ketua Komisi 2',
-    name: 'Stevani K. Runtuwerne',
-    unit: 'Pengawasan & Advokasi',
-    image:
-      'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=240&q=80',
-  },
-  {
-    role: 'Koordinator Humas',
-    name: 'Brigita T. Warouw',
-    unit: 'Hubungan Masyarakat',
-    image:
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=240&q=80',
-  },
-  {
-    role: 'Koordinator Media',
-    name: 'Yohanes R. P.',
-    unit: 'Media & Informasi',
-    image:
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=240&q=80',
-  },
-];
+const campusHero='/fipp-campus-hero.png';
 
 export function PublicFrame({ children }: { children: React.ReactNode }) {
   return (
@@ -94,37 +52,35 @@ export function PublicFrame({ children }: { children: React.ReactNode }) {
 }
 
 export function V4Home() {
+  const {data,loading,error}=usePublicPortal();
+  const savedHome=(data.settings['site.home']??data.settings['site_content.home_hero']??{}) as Partial<{title:string;subtitle:string;paragraph:string;image:string;cta1:string;cta1Href:string;cta2:string;cta2Href:string}>;
+  const latestNews=data.contents.filter((item)=>item.content_type==='berita').slice(0,3);
+  const studies=data.contents.filter((item)=>item.content_type==='d-sight').slice(0,3);
+  const surveys=data.surveys.slice(0,2);
   return (
     <PublicFrame>
       <section
         className="v5-home-hero"
-        style={{ '--campus': `url(${campusHero})` } as React.CSSProperties}
+        style={{ '--campus': `url(${savedHome.image??campusHero})` } as React.CSSProperties}
       >
         <div className="v5-shell">
           <div className="v5-hero-copy">
             <span>DEWAN PERWAKILAN MAHASISWA</span>
-            <h1>DPM FIPP UNIMA</h1>
-            <h2>
-              Representasi, Aspirasi, Legislasi,
-              <br />
-              dan Pengawasan Mahasiswa.
-            </h2>
-            <p>
-              DPM FIPP UNIMA hadir sebagai jembatan komunikasi antara mahasiswa
-              dan fakultas untuk mendorong perubahan, transparansi, dan kemajuan
-              bersama.
-            </p>
+            <h1>{savedHome.title??'DPM FIPP UNIMA'}</h1>
+            <h2>{savedHome.subtitle??'Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.'}</h2>
+            <p>{savedHome.paragraph??'DPM FIPP UNIMA hadir sebagai jembatan komunikasi antara mahasiswa dan fakultas untuk mendorong perubahan, transparansi, dan kemajuan bersama.'}</p>
             <div>
-              <Link className="v6-cta v6-cta-secondary" href="/tentang">
-                <ShieldCheck /> Jelajahi DPM
+              <Link className="v6-cta v6-cta-secondary" href={savedHome.cta1Href??'/tentang'}>
+                <ShieldCheck /> {savedHome.cta1??'Jelajahi DPM'}
               </Link>
-              <Link className="v6-cta v6-cta-primary" href="/ddas">
-                <Send /> Kirim Aspirasi
+              <Link className="v6-cta v6-cta-primary" href={savedHome.cta2Href??'/ddas'}>
+                <Send /> {savedHome.cta2??'Kirim Aspirasi'}
               </Link>
             </div>
           </div>
         </div>
       </section>
+      {(loading||error)&&<p className="v5-shell v5-filter-empty">{loading?'Memuat data publik…':error}</p>}
       <section className="v5-shell v5-home-cards">
         <article>
           <header>
@@ -135,12 +91,12 @@ export function V4Home() {
             <Link href="/d-sight?tab=berita">Lihat semua</Link>
           </header>
           <div className="v5-mini-news">
-            {news.map((item) => (
+            {latestNews.map((item) => (
               <Link href={`/berita/${item.slug}`} key={item.slug}>
-                <img src={item.image} alt="" />
+                <img src={publicAssetUrl(item)} alt="" />
                 <span>
                   <b>{item.title}</b>
-                  <small>{item.date}</small>
+                  <small>{formatPublicDate(item.published_at??item.updated_at)}</small>
                 </span>
               </Link>
             ))}
@@ -154,20 +110,20 @@ export function V4Home() {
             <h2>D-DAS</h2>
           </header>
           <strong>
-            5 <small>Total Aspirasi</small>
+            {data.ddas.total} <small>Total Aspirasi</small>
           </strong>
           <div className="v5-status-list">
             <p>
               <i />
-              Dalam proses <b>2</b>
+              Dalam proses <b>{data.ddas.inProgress}</b>
             </p>
             <p>
               <i />
-              Ditindaklanjuti <b>1</b>
+              Ditindaklanjuti <b>{data.ddas.followedUp}</b>
             </p>
             <p>
               <i />
-              Selesai <b>2</b>
+              Selesai <b>{data.ddas.completed}</b>
             </p>
           </div>
           <footer className="v6-card-actions">
@@ -193,7 +149,7 @@ export function V4Home() {
                 <FileText />
                 <span>
                   <b>{x.title}</b>
-                  <small>{x.date}</small>
+                  <small>{formatPublicDate(x.published_at??x.updated_at)}</small>
                 </span>
               </p>
             ))}
@@ -212,18 +168,9 @@ export function V4Home() {
             <h2>D-SIGHT Survei</h2>
           </header>
           <div className="v5-survey-card">
-            <b>Isu prioritas mahasiswa</b>
-            <p>Kualitas layanan akademik</p>
-            <div>
-              <i style={{ width: '68%' }} />
-              <span>68%</span>
-            </div>
-            <p>Fasilitas ruang belajar</p>
-            <div>
-              <i style={{ width: '51%' }} />
-              <span>51%</span>
-            </div>
-            <small>247 respons masuk · hasil sementara</small>
+            <b>{surveys.length?'Isu prioritas mahasiswa':'Belum ada survei aktif'}</b>
+            {(surveys.length?surveys:[{id:'empty',title:'Belum ada data survei',responseCount:0}]).map((survey)=><div key={survey.id}><p>{survey.title}</p><div><i style={{width:'0%'}}/><span>0%</span></div></div>)}
+            <small>{surveys.reduce((sum,item)=>sum+Number(item.responseCount),0)} respons masuk · hasil sementara</small>
           </div>
           <footer>
             <Link href="/d-sight?tab=survei">
@@ -240,16 +187,16 @@ export function V4Home() {
             <Link href="/ormawa">Lihat semua</Link>
           </header>
           <strong>
-            12 <small>ORMAWA Aktif</small>
+            {data.organizations.length} <small>ORMAWA Aktif</small>
           </strong>
           <div className="v5-logo-cloud">
-            {ormawa.slice(0, 6).map((x) => (
+            {data.organizations.slice(0, 6).map((x) => (
               <Link
                 href={`/ormawa/${x.slug}`}
                 key={x.slug}
-                style={{ background: x.color }}
+                style={{ background: '#075d46' }}
               >
-                {x.short}
+                {x.shortName??x.name.slice(0,4)}
               </Link>
             ))}
           </div>
@@ -265,6 +212,9 @@ export function V4Home() {
 }
 
 export function V4About() {
+  const {data,loading,error}=usePublicPortal();
+  const about=data.settings['site.about'] as {description?:string}|undefined;
+  const organizationMembers=(data.settings['site.organization_structure'] as Array<{id?:number;role:string;name:string;unit:string;image?:string}>|undefined)??[];
   return (
     <PublicFrame>
       <section
@@ -275,22 +225,18 @@ export function V4About() {
           <small>Beranda › Tentang</small>
           <h1>Tentang DPM FIPP UNIMA</h1>
           <h2>Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.</h2>
-          <p>
-            DPM FIPP UNIMA adalah lembaga perwakilan mahasiswa tingkat fakultas
-            yang menyalurkan aspirasi, menyusun kajian, menjalankan fungsi
-            legislasi, dan mengawasi pelaksanaan kebijakan serta program
-            kemahasiswaan.
-          </p>
+          <p>{about?.description??'Informasi Tentang DPM belum diisi melalui Portal Admin.'}</p>
           <div className="v4-period">
             <span>
               Berdiri Sejak<b>2006</b>
             </span>
             <span>
-              Periode Aktif<b>2026–2027</b>
+              Periode Aktif<b>{data.period.name??'Belum diatur'}</b>
             </span>
           </div>
         </div>
       </section>
+      {(loading||error)&&<p className="v5-shell v5-filter-empty">{loading?'Memuat data publik…':error}</p>}
       <section className="v5-shell v5-org">
         <header>
           <h2>Struktur Organisasi DPM FIPP UNIMA</h2>
@@ -302,7 +248,7 @@ export function V4About() {
         <div className="v6-org-people">
           {organizationMembers.map((person, index) => (
             <article className={index < 2 ? 'leader' : ''} key={person.role}>
-              <img src={person.image} alt={`Foto ${person.name}`} />
+              <img src={person.image??'/dpm-crest.png'} alt={`Foto ${person.name}`} />
               <span>
                 <small>{person.role}</small>
                 <b>{person.name}</b>
@@ -325,13 +271,13 @@ export function V4About() {
             </Link>
           </div>
           <div className="v5-logo-cloud">
-            {ormawa.map((x) => (
+            {data.organizations.map((x) => (
               <Link
                 href={`/ormawa/${x.slug}`}
                 key={x.slug}
-                style={{ background: x.color }}
+                style={{ background: '#075d46' }}
               >
-                {x.short}
+                {x.shortName??x.name.slice(0,4)}
               </Link>
             ))}
           </div>
@@ -341,51 +287,24 @@ export function V4About() {
   );
 }
 
-const publications = [
-  [
-    'BERITA',
-    'Forum Aspirasi Mahasiswa Periode 2026–2027',
-    'Forum aspirasi menjadi ruang dialog terbuka antara mahasiswa dan pimpinan fakultas.',
-  ],
-  [
-    'KAJIAN',
-    'Evaluasi Efektivitas Kurikulum MBKM',
-    'Kajian implementasi MBKM dan rekomendasi perbaikan.',
-  ],
-  [
-    'D-SIGHT',
-    'Potret Aspirasi Mahasiswa April 2026',
-    'Ringkasan data aspirasi berdasarkan topik dan status.',
-  ],
-  [
-    'D-TRACE',
-    'Tindak Lanjut Aspirasi Maret–April',
-    'Laporan tindak lanjut bersama unit terkait.',
-  ],
-  [
-    'MEDIA',
-    'Diskusi Publik Pendidikan Inklusif',
-    'Dokumentasi kegiatan diskusi publik.',
-  ],
-  [
-    'ARSIP',
-    'Laporan Kinerja DPM Periode 2025',
-    'Dokumen akuntabilitas organisasi.',
-  ],
-];
 export function V4Publications() {
+  const {data,loading,error}=usePublicPortal();
   const [type, setType] = useState('Semua');
+  const [unit,setUnit]=useState('Semua');
+  const [sort,setSort]=useState('Terbaru');
   const [query, setQuery] = useState('');
+  const publications=data.contents.filter((item)=>!['program','page'].includes(item.content_type??''));
   const filtered = useMemo(
     () =>
       publications.filter(
         (item) =>
-          (type === 'Semua' || item[0] === type) &&
-          `${item[0]} ${item[1]} ${item[2]}`
+          (type === 'Semua' || item.content_type === type) &&
+          (unit==='Semua'||item.unit_name===unit)&&
+          `${item.content_type} ${item.title} ${item.summary}`
             .toLowerCase()
             .includes(query.toLowerCase()),
-      ),
-    [type, query],
+      ).sort((a,b)=>sort==='A–Z'?a.title.localeCompare(b.title):sort==='Terlama'?new Date(a.published_at??a.updated_at).getTime()-new Date(b.published_at??b.updated_at).getTime():new Date(b.published_at??b.updated_at).getTime()-new Date(a.published_at??a.updated_at).getTime()),
+    [publications,type,unit,sort,query],
   );
   return (
     <PublicFrame>
@@ -402,6 +321,7 @@ export function V4Publications() {
           </p>
         </div>
       </section>
+      {(loading||error)&&<p className="v5-shell v5-filter-empty">{loading?'Memuat data publik…':error}</p>}
       <section className="v5-shell">
         <div className="v4-pub-filters">
           <label>
@@ -411,39 +331,34 @@ export function V4Publications() {
               onChange={(event) => setType(event.target.value)}
             >
               <option>Semua</option>
-              {[...new Set(publications.map((item) => item[0]))].map((item) => (
+              {[...new Set(publications.map((item) => item.content_type).filter(Boolean))].map((item) => (
                 <option key={item}>{item}</option>
               ))}
             </select>
           </label>
           <label>
             <span>Kategori</span>
-            <select>
-              <option>Semua Kategori</option>
-              <option>Kemahasiswaan</option>
-              <option>Akademik</option>
-              <option>Akuntabilitas</option>
+            <select value={type} onChange={(event)=>setType(event.target.value)}>
+              <option value="Semua">Semua Kategori</option>
+              {[...new Set(publications.map((item)=>item.content_type).filter(Boolean))].map((item)=><option key={item}>{item}</option>)}
             </select>
           </label>
           <label>
             <span>Unit</span>
-            <select>
+            <select value={unit} onChange={(event)=>setUnit(event.target.value)}>
               <option>Semua Unit</option>
-              <option>DPM FIPP</option>
-              <option>Komisi I</option>
-              <option>Komisi II</option>
+              {[...new Set(publications.map((item)=>item.unit_name).filter(Boolean))].map((item)=><option key={item}>{item}</option>)}
             </select>
           </label>
           <label>
             <span>Periode</span>
-            <select>
-              <option>2026–2027</option>
-              <option>2025–2026</option>
+            <select value={data.period.id??''} disabled>
+              <option value={data.period.id??''}>{data.period.name??'Belum ada periode'}</option>
             </select>
           </label>
           <label>
             <span>Sortir</span>
-            <select>
+            <select value={sort} onChange={(event)=>setSort(event.target.value)}>
               <option>Terbaru</option>
               <option>Terlama</option>
               <option>A–Z</option>
@@ -459,15 +374,15 @@ export function V4Publications() {
           </label>
         </div>
         <div className="v4-pub-grid">
-          {filtered.map((p, i) => (
-            <article key={p[1]}>
-              <div style={{ backgroundImage: `url(${news[i % 3].image})` }}>
-                <span>{p[0]}</span>
+          {filtered.map((p) => (
+            <article key={p.id}>
+              <div style={{ backgroundImage: `url(${publicAssetUrl(p)})` }}>
+                <span>{p.content_type?.toUpperCase()}</span>
               </div>
-              <small>{12 - i} Mei 2026</small>
-              <h2>{p[1]}</h2>
-              <p>{p[2]}</p>
-              <Link href="/berita/forum-aspirasi-mahasiswa">
+              <small>{formatPublicDate(p.published_at??p.updated_at)}</small>
+              <h2>{p.title}</h2>
+              <p>{p.summary}</p>
+              <Link href={`/berita/${p.slug}`}>
                 Baca selengkapnya <ArrowRight />
               </Link>
             </article>
@@ -482,46 +397,29 @@ export function V4Publications() {
     </PublicFrame>
   );
 }
-export function V4PublicationDetail() {
+export function V4PublicationDetail({slug}:{slug:string}) {
+  const {data,loading,error}=usePublicPortal();
+  const article=data.contents.find((item)=>item.slug===slug);
+  const related=data.contents.filter((item)=>item.content_type==='berita'&&item.id!==article?.id).slice(0,3);
   return (
     <PublicFrame>
       <section className="v5-shell v4-article-layout">
         <article>
           <div
             className="v4-article-image"
-            style={{ backgroundImage: `url(${news[0].image})` }}
+            style={{ backgroundImage: `url(${article?publicAssetUrl(article):campusHero})` }}
           />
-          <span className="v4-tag">KEGIATAN</span>
-          <h1>
-            Forum Aspirasi Mahasiswa Periode 2026–2027: Wadah Dialog dan
-            Penguatan Representasi
-          </h1>
-          <small>DPM FIPP UNIMA · 12 Mei 2026</small>
-          <p>
-            DPM FIPP UNIMA menyelenggarakan Forum Aspirasi Mahasiswa sebagai
-            ruang terbuka untuk menyampaikan gagasan, kritik, dan solusi atas
-            isu akademik maupun non-akademik.
-          </p>
-          <div className="v4-inline-gallery">
-            {news.map((x) => (
-              <span
-                key={x.slug}
-                style={{ backgroundImage: `url(${x.image})` }}
-              />
-            ))}
-          </div>
-          <p>
-            Isu prioritas akan ditindaklanjuti melalui program kerja dan
-            advokasi kelembagaan. Setiap pembaruan publik disanitasi sebelum
-            ditampilkan.
-          </p>
-          <PublicComments slug="forum-aspirasi-mahasiswa" />
+          <span className="v4-tag">{article?.content_type?.toUpperCase()??'BERITA'}</span>
+          <h1>{article?.title??(loading?'Memuat publikasi…':'Publikasi tidak ditemukan')}</h1>
+          <small>DPM FIPP UNIMA · {formatPublicDate(article?.published_at??article?.updated_at)}</small>
+          <p>{article?.summary??error??'Konten ini belum tersedia pada database.'}</p>
+          {article&&<PublicComments slug={article.slug} />}
         </article>
         <aside>
           <h3>Berita Terkait</h3>
-          {news.map((x) => (
+          {related.map((x) => (
             <Link href={`/berita/${x.slug}`} key={x.slug}>
-              <span style={{ backgroundImage: `url(${x.image})` }} />
+              <span style={{ backgroundImage: `url(${publicAssetUrl(x)})` }} />
               <b>{x.title}</b>
             </Link>
           ))}
