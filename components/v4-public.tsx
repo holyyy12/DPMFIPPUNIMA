@@ -66,7 +66,6 @@ export function V4Home() {
       >
         <div className="v5-shell">
           <div className="v5-hero-copy">
-            <span>DEWAN PERWAKILAN MAHASISWA</span>
             <h2>{savedHome.subtitle??'Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.'}</h2>
             <p>{savedHome.paragraph??'DPM FIPP UNIMA hadir sebagai jembatan komunikasi antara mahasiswa dan fakultas untuk mendorong perubahan, transparansi, dan kemajuan bersama.'}</p>
             <div>
