@@ -417,6 +417,7 @@ export function DdasCaseV4() {
   const current = data.ddasCases[0];
   const [publicUpdate, setPublicUpdate] = useState('');
   const [internalNote, setInternalNote] = useState('');
+  const caseAudit = data.audit.filter((item) => item.target_id === current?.id);
   const timeline = [
     'Masuk',
     'Ditinjau',
@@ -517,26 +518,22 @@ export function DdasCaseV4() {
         <aside>
           <section className="v4-panel">
             <h2>Log Aktor</h2>
-            {[
-              'Membuat tiket aspirasi',
-              'Meninjau aspirasi',
-              'Meneruskan ke BEM Fakultas',
-            ].map((x) => (
-              <p key={x}>
-                <b>SA　Super Admin</b>
-                <small>{x} · 20 Mei 2026</small>
+            {caseAudit.map((item) => (
+              <p key={item.id}>
+                <b>{item.actor_name ?? item.actor_type}</b>
+                <small>{item.action} · {new Intl.DateTimeFormat('id-ID', { dateStyle:'medium', timeStyle:'short' }).format(new Date(item.occurred_at))}</small>
               </p>
             ))}
+            {!caseAudit.length && <p className="v5-filter-empty">Belum ada event audit untuk kasus ini.</p>}
           </section>
           <section className="v4-panel">
             <h2>Aktivitas Terbaru</h2>
-            <p>● Status diubah menjadi Ditinjau</p>
-            <p>● Ditugaskan ke unit BEM Fakultas</p>
-            <p>● Tiket dibuat</p>
+            {current?.timeline.slice(-3).reverse().map((item) => <p key={`${item.state}-${item.occurredAt}`}>● {item.message}</p>)}
+            {!current?.timeline.length && <p>Belum ada aktivitas.</p>}
           </section>
           <section className="v4-panel">
             <h2>Metadata Kasus</h2>
-            <p>ID Internal　INT-2026-0005</p>
+            <p>ID Internal　{current?.id ?? '—'}</p>
             <p>Sumber　Web Portal D-DAS</p>
             <p>Perangkat　Chrome / Windows</p>
             <p>Klasifikasi　Publik (Tersanitasi)</p>
@@ -549,7 +546,7 @@ export function DdasCaseV4() {
 
 export function CommentsV4() {
   const { data, loading, error, reload } = useAdminPortal();
-  const comments = data.comments.map((item) => ({ id: item.id, author: item.display_mode === 'anonymous' ? 'Anonim' : item.display_name || 'Pengguna', status: item.status === 'pending' ? 'Perlu Penyaringan' : item.status === 'published' ? 'Dipublikasikan' : item.status === 'rejected' ? 'Ditolak' : item.status, body: item.body, source: item.resource_type === 'page' ? 'Beranda' : item.resource_type, date: new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(item.created_at)) }));
+  const comments = data.comments.map((item) => ({ id: item.id, threadId:item.thread_id, parentId:item.parent_id, author: item.display_mode === 'anonymous' ? 'Anonim' : item.display_name || 'Pengguna', status: item.status === 'pending' ? 'Perlu Penyaringan' : item.status === 'published' ? 'Dipublikasikan' : item.status === 'rejected' ? 'Ditolak' : item.status, body: item.body, source: item.resource_type === 'page' ? 'Beranda' : item.resource_type, date: new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(item.created_at)), createdAt:item.created_at }));
   const [source, setSource] = useState('Semua');
   const [status, setStatus] = useState('Semua');
   const [sort, setSort] = useState('Terbaru');
@@ -567,7 +564,8 @@ export function CommentsV4() {
       ).sort((a, b) => sort === 'Terlama' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)),
     [comments, source, status, query, sort],
   );
-  const active = filtered[selected] ?? filtered[0] ?? { id: '', author: '—', status: 'Kosong', body: 'Belum ada komentar pada database.', source: '—', date: '—' };
+  const active = filtered[selected] ?? filtered[0] ?? { id: '', threadId:'', parentId:undefined, author: '—', status: 'Kosong', body: 'Belum ada komentar pada database.', source: '—', date: '—', createdAt:'' };
+  const replies=comments.filter((item)=>item.threadId===active.threadId&&item.parentId===active.id);
   async function moderate(status: 'published' | 'hidden' | 'rejected', reasonCode: 'approved' | 'other') {
     if (!active.id) return;
     const response = await fetch('/api/admin/comments', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ commentId: active.id, status, reasonCode }) });
@@ -692,16 +690,12 @@ export function CommentsV4() {
             <small>20 Mei 2026 10:23</small>
             <p>{active.body}</p>
           </article>
-          <p>3 balasan</p>
-          {[
-            'Halo, mahasiswa aktif angkatan lama tetap dapat mendaftar selama memenuhi syarat yang berlaku.',
-            'Terima kasih atas informasinya. Apakah ada batas waktu pendaftarannya?',
-            'Pendaftaran dibuka sampai tanggal 31 Mei 2026.',
-          ].map((x, i) => (
-            <article className="reply" key={x}>
-              <b>{i === 1 ? '😎 Anonim' : 'SA　Super Admin'}</b>
-              <small>20 Mei 2026 10:{35 + i * 7}</small>
-              <p>{x}</p>
+          <p>{replies.length} balasan</p>
+          {replies.map((reply) => (
+            <article className="reply" key={reply.id}>
+              <b>{reply.author}</b>
+              <small>{reply.date}</small>
+              <p>{reply.body}</p>
             </article>
           ))}
           <footer>

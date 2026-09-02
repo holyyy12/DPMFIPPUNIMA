@@ -728,12 +728,10 @@ export function OrganizationAdmin() {
                         accept="image/png,image/jpeg,image/webp"
                         onChange={(event) => {
                           const file = event.target.files?.[0];
-                          if (file)
-                            updateMember(
-                              member.id,
-                              'image',
-                              URL.createObjectURL(file),
-                            );
+                          if (file) {
+                            if (file.size > 2_000_000) return alert('Foto maksimal 2 MB.');
+                            const reader=new FileReader(); reader.onload=()=>updateMember(member.id,'image',String(reader.result)); reader.readAsDataURL(file);
+                          }
                         }}
                       />
                     </label>
