@@ -1,2 +1,2 @@
-import { IamV4 } from '@/components/v4-admin';
-export default function Page(){return <IamV4/>}
+import { IamAdminRework } from '@/components/admin-rework';
+export default function Page(){return <IamAdminRework/>}

@@ -61,10 +61,10 @@ function Title({
 }) {
   return (
     <header className="v4-admin-title">
-      <div>
+      {action && <div>
         <h1>{title}</h1>
         <p>{copy}</p>
-      </div>
+      </div>}
       <div>
         <button
           type="button"
@@ -104,10 +104,20 @@ function Metric({
 
 export function SiteContentAdmin() {
   const { data, loading, error, message, runAction } = useAdminPortal();
-  const stored = data.settings['site.home'] as Partial<{ title:string; subtitle:string; paragraph:string; cta1:string; cta1Href:string; cta2:string; cta2Href:string }> | undefined;
-  const [form, setForm] = useState({ title:'DPM FIPP UNIMA', subtitle:'Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.', paragraph:'DPM FIPP UNIMA hadir sebagai jembatan komunikasi antara mahasiswa dan fakultas untuk mendorong perubahan, transparansi, dan kemajuan bersama.', cta1:'Jelajahi DPM', cta1Href:'/tentang', cta2:'Kirim Aspirasi', cta2Href:'/ddas' });
+  const stored = data.settings['site.home'] as Partial<{ title:string; subtitle:string; paragraph:string; image:string; logo:string; favicon:string; socialPreview:string; aboutPhoto:string; ormawaLogo:string; publicationThumbnail:string; cta1:string; cta1Href:string; cta2:string; cta2Href:string }> | undefined;
+  const [form, setForm] = useState({ title:'DPM FIPP UNIMA', subtitle:'Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.', paragraph:'DPM FIPP UNIMA hadir sebagai jembatan komunikasi antara mahasiswa dan fakultas untuk mendorong perubahan, transparansi, dan kemajuan bersama.', image:'/fipp-campus-hero.png', logo:'/dpm-crest.png', favicon:'/favicon-dpm.png', socialPreview:'/og.png', aboutPhoto:'/fipp-campus-hero.png', ormawaLogo:'/dpm-crest.png', publicationThumbnail:'/fipp-campus-hero.png', cta1:'Jelajahi DPM', cta1Href:'/tentang', cta2:'Kirim Aspirasi', cta2Href:'/ddas' });
+  const [assetMessage,setAssetMessage]=useState('');
   useEffect(() => { if (stored) setForm((current) => ({ ...current, ...stored })); }, [JSON.stringify(stored)]);
   const field = (key: keyof typeof form, value:string) => setForm((current) => ({ ...current, [key]:value }));
+  const uploadAsset = async (key:keyof typeof form, file?:File) => {
+    if(!file) return;
+    if(file.size>20*1024*1024) return setAssetMessage('Aset maksimal 20 MB.');
+    const body=new FormData();body.set('file',file);body.set('bucket','public-media');body.set('alt',`Aset ${String(key)}`);
+    const response=await fetch('/api/admin/media',{method:'POST',body});
+    const payload=await response.json() as {ok:boolean;data?:{publicUrl:string};message?:string};
+    if(!response.ok||!payload.ok||!payload.data?.publicUrl) return setAssetMessage(payload.message||'Aset gagal diunggah.');
+    field(key,payload.data.publicUrl);setAssetMessage('Aset berhasil diunggah. Klik Simpan Perubahan untuk menerapkannya.');
+  };
   return (
     <div className="v4-admin-content v5-admin-workspace">
       <Title
@@ -115,7 +125,7 @@ export function SiteContentAdmin() {
         copy="Kelola Hero Beranda, teks institusional, logo, foto, dan navigasi tanpa mengubah kode."
         onAction={() => void runAction('setting.save', { namespace:'site', key:'home', value:form, isPublic:true }, 'Tampilan situs berhasil disimpan ke Supabase.')}
       />
-      {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
+      {(loading || error || message || assetMessage) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message || assetMessage}</p>}
       <div className="v5-admin-layout">
         <main>
           <section className="v4-panel v5-admin-form">
@@ -138,11 +148,12 @@ export function SiteContentAdmin() {
             <label>
               Gambar Hero
               <div className="v5-asset-field">
-                <img src="/fipp-campus-hero.png" alt="Pratinjau Hero" />
+                <img src={form.image} alt="Pratinjau Hero" />
                 <span>
-                  <button onClick={() => location.assign('/admin/media')}>
+                  <label className="v9-file-button">
                     <Upload /> Ganti Gambar
-                  </button>
+                    <input type="file" accept="image/*" onChange={(event)=>void uploadAsset('image',event.target.files?.[0])}/>
+                  </label>
                   <small>JPG, PNG, WebP · rekomendasi 2400×1000 px</small>
                 </span>
               </div>
@@ -178,43 +189,46 @@ export function SiteContentAdmin() {
             <label>
               Logo Utama
               <div className="v5-logo-editor">
-                <img src="/dpm-crest.png" alt="Logo saat ini" />
-                <button onClick={() => location.assign('/admin/media')}>
+                <img src={form.logo} alt="Logo saat ini" />
+                <label className="v9-file-button">
                   <Upload /> Ganti Logo
-                </button>
+                  <input type="file" accept="image/*" onChange={(event)=>void uploadAsset('logo',event.target.files?.[0])}/>
+                </label>
               </div>
             </label>
             <label>
               Favicon
-              <button onClick={() => location.assign('/admin/media')}>
+              <label className="v9-file-button">
                 <Image /> Unggah Favicon
-              </button>
+                <input type="file" accept="image/*" onChange={(event)=>void uploadAsset('favicon',event.target.files?.[0])}/>
+              </label>
             </label>
             <label>
               Gambar Social Preview
-              <button onClick={() => location.assign('/admin/media')}>
+              <label className="v9-file-button">
                 <Image /> Ganti Gambar
-              </button>
+                <input type="file" accept="image/*" onChange={(event)=>void uploadAsset('socialPreview',event.target.files?.[0])}/>
+              </label>
             </label>
           </section>
           <section className="v4-panel v5-admin-form">
             <header>
               <h2>Pustaka Aset Cepat</h2>
             </header>
-            {[
-              'Logo DPM',
-              'Hero Beranda',
-              'Foto Tentang',
-              'Logo ORMAWA',
-              'Thumbnail Publikasi',
-            ].map((x) => (
+            {([
+              ['Logo DPM','logo'],
+              ['Hero Beranda','image'],
+              ['Foto Tentang','aboutPhoto'],
+              ['Logo ORMAWA','ormawaLogo'],
+              ['Thumbnail Publikasi','publicationThumbnail'],
+            ] as const).map(([x,key]) => (
               <p className="v5-asset-row" key={x}>
                 <Image />
                 <span>
                   <b>{x}</b>
                   <small>Dapat diganti dari Media</small>
                 </span>
-                <button onClick={() => location.assign('/admin/media')}>Kelola</button>
+                <label className="v9-file-button compact">Kelola<input type="file" accept="image/*" onChange={(event)=>void uploadAsset(key,event.target.files?.[0])}/></label>
               </p>
             ))}
           </section>
@@ -583,8 +597,9 @@ export function NotificationsAdmin() {
       <Title
         title="Notifikasi"
         copy="Kelola notifikasi in-app, template, preferensi, dan status pengiriman."
-        action="Buat Notifikasi"
-        onAction={() => location.assign('/admin/cms?type=notification')}
+        action="Tandai Semua Dibaca"
+        onAction={() => void runAction('notification.mark_all_read', {}, 'Semua notifikasi ditandai dibaca.')}
+        actionDisabled={!unread.length}
       />
       {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
       <div className="v4-admin-stats">
@@ -679,10 +694,7 @@ export function OrganizationAdmin() {
       <Title
         title="Periode, Struktur & ORMAWA"
         copy="Kelola halaman Tentang, struktur organisasi, periode, dan permintaan halaman ORMAWA tanpa coding."
-        onAction={() => void Promise.all([
-          runAction('setting.save', { namespace:'site', key:'about', value:{ description:about }, isPublic:true }, 'Konten organisasi berhasil disimpan.'),
-          runAction('setting.save', { namespace:'site', key:'organization_structure', value:members, isPublic:true }, 'Struktur organisasi berhasil disimpan.'),
-        ]).then(() => setSaved(true))}
+        action=""
       />
       {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
       <div className="v5-admin-layout">
@@ -779,19 +791,25 @@ export function OrganizationAdmin() {
                 </article>
               ))}
             </div>
-            <footer className="v6-editor-footer">
+            <footer className="v6-editor-footer v9-structure-actions">
               <p>
                 {saved
                   ? 'Perubahan struktur tersimpan.'
                   : `${members.length} pengurus siap ditampilkan pada halaman Tentang.`}
               </p>
-              <button
+              <div className="v9-structure-button-stack"><button
                 className="primary"
                 type="button"
                 onClick={() => void runAction('setting.save', { namespace:'site', key:'organization_structure', value:members, isPublic:true }, 'Struktur organisasi berhasil disimpan.').then(() => setSaved(true))}
               >
                 <Save /> Simpan Struktur
               </button>
+              <button className="primary" type="button" onClick={() => void Promise.all([
+                runAction('setting.save', { namespace:'site', key:'about', value:{ description:about }, isPublic:true }, 'Konten organisasi berhasil disimpan.'),
+                runAction('setting.save', { namespace:'site', key:'organization_structure', value:members, isPublic:true }, 'Struktur organisasi berhasil disimpan.'),
+              ]).then(() => setSaved(true))}>
+                <Save /> Simpan Perubahan
+              </button></div>
             </footer>
           </section>
         </main>
@@ -846,6 +864,8 @@ export function OrganizationAdmin() {
 
 export function PermissionAdmin() {
   const { data, loading, error, message, runAction, reload } = useAdminPortal();
+  const [showCreate, setShowCreate] = useState(false);
+  const [newPermission, setNewPermission] = useState({ key:'', description:'' });
   const roleKeys = ['super_admin', 'chairperson', 'secretary', 'dpm_unit', 'ormawa'];
   const roleNames = roleKeys.map((key) => data.roles.find((role) => role.key === key)?.name ?? key.replaceAll('_', ' '));
   return (
@@ -863,10 +883,17 @@ export function PermissionAdmin() {
             <h2>Permission Matrix</h2>
             <p>Explicit deny selalu mengalahkan allow.</p>
           </div>
-          <button className="primary" onClick={() => location.assign('/admin/iam')}>
+          <button className="primary" onClick={() => setShowCreate((value) => !value)}>
             <Plus /> Tambah Permission
           </button>
         </header>
+        {showCreate && <div className="v9-permission-create">
+          <input value={newPermission.key} onChange={(event) => setNewPermission((value) => ({ ...value, key:event.target.value }))} placeholder="contoh: media.asset.update" />
+          <input value={newPermission.description} onChange={(event) => setNewPermission((value) => ({ ...value, description:event.target.value }))} placeholder="Deskripsi permission" />
+          <button className="primary" disabled={!newPermission.key || !newPermission.description} onClick={() => { const [resource='', action=''] = newPermission.key.split('.'); void runAction('permission.create', { ...newPermission, resource, action, scopeKind:'all' }, 'Permission berhasil ditambahkan.').then(() => { setNewPermission({ key:'', description:'' }); setShowCreate(false); }); }}>
+            <Plus /> Simpan Permission
+          </button>
+        </div>}
         <div>
           <b>Permission</b>
           {roleNames.map((x) => (

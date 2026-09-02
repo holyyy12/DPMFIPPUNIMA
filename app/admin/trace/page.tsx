@@ -1,2 +1,2 @@
-import { TraceAdmin } from '@/components/v5-admin-workspaces';
-export default function Page(){return <TraceAdmin/>}
+import { TraceAdminRework } from '@/components/admin-rework';
+export default function Page(){return <TraceAdminRework/>}

@@ -13,6 +13,12 @@ const actionSchema = z.object({
     'ddas.internal_note',
     'content.save',
     'content.delete',
+    'survey.save',
+    'unit.save',
+    'permission.create',
+    'user.invite_request',
+    'ddas.assign',
+    'ddas.attach',
   ]),
   payload: z.record(z.string(), z.unknown()).default({}),
 });
@@ -40,7 +46,8 @@ export async function POST(request: Request) {
     const session = await adminSession();
     if (!session) return Response.json({ ok: false, message: 'Sesi admin dan MFA diperlukan.' }, { status: 403 });
     const input = actionSchema.parse(await request.json());
-    const data = await supabaseRpc<{ ok: boolean; id?: string }>('admin_portal_action', {
+    const extended = ['survey.save','unit.save','permission.create','user.invite_request','ddas.assign','ddas.attach'].includes(input.action);
+    const data = await supabaseRpc<{ ok: boolean; id?: string }>(extended ? 'admin_portal_extended_action' : 'admin_portal_action', {
       p_action: input.action,
       p_payload: input.payload,
     }, { accessToken: session.token, noStore: true });

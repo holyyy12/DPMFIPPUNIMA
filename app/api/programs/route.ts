@@ -136,3 +136,32 @@ export async function PUT(request: Request) {
     );
   }
 }
+
+const createSchema = z.object({
+  title: z.string().trim().min(3).max(180),
+  copy: z.string().trim().min(10).max(1200),
+  unit: z.string().trim().min(2).max(120),
+  progress: z.number().int().min(0).max(100),
+  success: z.number().int().min(0).max(100),
+  continuityIndicator: z.string().trim().min(3).max(500),
+  successIndicator: z.string().trim().min(3).max(500),
+  updateNote: z.string().trim().min(3).max(2000),
+  documentation: z.array(z.object({ url:z.string().max(3000), name:z.string().max(255), assetId:z.string().uuid().optional() })).max(5),
+});
+
+export async function POST(request: Request) {
+  try {
+    const session = await verifyAdminSession();
+    if (!session) return Response.json({ ok:false, message:'Sesi admin diperlukan.' }, { status:401 });
+    const input = createSchema.parse(await request.json());
+    const data = await supabaseRpc<Record<string, unknown>>('create_admin_program', {
+      p_title:input.title, p_summary:input.copy, p_unit_label:input.unit,
+      p_progress_percent:input.progress, p_success_percent:input.success,
+      p_continuity_indicator:input.continuityIndicator, p_success_indicator:input.successIndicator,
+      p_public_note:input.updateNote, p_media:input.documentation,
+    }, { accessToken:session.token, noStore:true });
+    return Response.json({ ok:true, data }, { headers:{ 'Cache-Control':'private, no-store' } });
+  } catch (error) {
+    return Response.json({ ok:false, message:error instanceof z.ZodError ? 'Lengkapi seluruh data program.' : 'Program kerja gagal ditambahkan.' }, { status:400 });
+  }
+}

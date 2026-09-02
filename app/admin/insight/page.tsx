@@ -1,2 +1,2 @@
-import { InsightAdmin } from '@/components/v5-admin-workspaces';
-export default function Page(){return <InsightAdmin/>}
+import { InsightAdminRework } from '@/components/admin-rework';
+export default function Page(){return <InsightAdminRework/>}

@@ -7,7 +7,7 @@ import { useAdminPortal } from './use-admin-portal';
 
 const items=[
  ['/admin/dashboard','Dashboard',LayoutGrid],['/admin/site','Tampilan Situs & Aset',Image],['/admin/ddas','D-DAS',Inbox],['/admin/insight','D-SIGHT',ChartNoAxesCombined],
- ['/admin/trace','D-TRACE',CircleGauge],['/admin/archive','D-DAR',FileArchive],['/admin/cms','Publikasi',FilePenLine],['/admin/media','Media',BookOpen],
+ ['/admin/trace','D-TRACE',CircleGauge],['/admin/archive','D-DAR',FileArchive],['/admin/media','Media',BookOpen],
  ['/admin/programs','Program Kerja',ClipboardList],
  ['/admin/comments','Komentar',MessageSquare],['/admin/notifications','Notifikasi',Bell],['/admin/organization','Periode & Organisasi',Building2],
  ['/admin/iam','Pengguna, Role & Permission',Users],['/admin/permission','Permission',ShieldCheck],['/admin/audit','Audit Log',ScrollText],

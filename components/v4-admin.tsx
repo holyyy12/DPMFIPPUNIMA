@@ -89,14 +89,6 @@ export function AdminDashboardV4() {
     'Selesai',
   ];
   const dashboardDates = [...new Set(liveCases.map((item) => item[5].split(',')[0]))];
-  const completedCases = data.ddasCases.filter((item) => ['resolved', 'closed', 'rejected_out_of_scope'].includes(item.status)).length;
-  const completionRate = data.ddasCases.length ? Math.round((completedCases / data.ddasCases.length) * 100) : 0;
-  const responseTimes = data.ddasCases.flatMap((item) => {
-    const submitted = new Date(item.submitted_at).getTime();
-    const firstUpdate = item.timeline.map((event) => new Date(event.occurredAt).getTime()).filter((time) => time > submitted).sort((a, b) => a - b)[0];
-    return firstUpdate ? [(firstUpdate - submitted) / 86_400_000] : [];
-  });
-  const averageResponse = responseTimes.length ? `${(responseTimes.reduce((sum, value) => sum + value, 0) / responseTimes.length).toLocaleString('id-ID', { maximumFractionDigits: 1 })} hari` : '0 hari';
   return (
     <div className="v4-admin-content">
       <PageTitle
@@ -172,7 +164,7 @@ export function AdminDashboardV4() {
           })}
         </div>
       </section>
-      <div className="v4-dashboard-grid">
+      <div className="v4-dashboard-grid v9-dashboard-single">
         <section className="v4-panel">
           <header>
             <div>
@@ -208,43 +200,6 @@ export function AdminDashboardV4() {
             )}
           </div>
         </section>
-        <aside>
-          <section className="v4-panel v4-quick">
-            <h2>Aksi Cepat</h2>
-            <div>
-              {[
-                ['Buat Aspirasi', Send],
-                ['Buat Publikasi', FilePenLine],
-                ['Tambah Pengguna', UserPlus],
-                ['Kelola Organisasi', Users],
-                ['Kelola Notifikasi', Bell],
-                ['Lihat Laporan', Activity],
-              ].map(([x, I], index) => {
-                const Icon = I as typeof Send;
-                const href = ['/ddas', '/admin/cms', '/admin/iam', '/admin/organization', '/admin/notifications', '/admin/audit'][index];
-                return (
-                  <button key={x as string} onClick={() => location.assign(href)}>
-                    <Icon />
-                    {x as string}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-          <section className="v4-panel">
-            <h2>Ringkasan Workflow</h2>
-            <div className="v4-workflow">
-              <span>
-                <small>Rata-rata Waktu Respon</small>
-                <b>{averageResponse}</b>
-              </span>
-              <span>
-                <small>Tingkat Penyelesaian</small>
-                <b>{completionRate}%</b>
-              </span>
-            </div>
-          </section>
-        </aside>
       </div>
     </div>
   );

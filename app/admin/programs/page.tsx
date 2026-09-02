@@ -1,5 +1,5 @@
-import { ProgramsAdmin } from '@/components/v5-admin-workspaces';
+import { ProgramsAdminRework } from '@/components/admin-rework';
 
 export default function Page() {
-  return <ProgramsAdmin />;
+  return <ProgramsAdminRework />;
 }
