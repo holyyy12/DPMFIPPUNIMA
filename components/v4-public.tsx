@@ -21,6 +21,7 @@ import { PublicComments } from './public-comments';
 import { DdasWorkspace } from './ddas-workspace';
 import { usePublicPortal } from './use-public-portal';
 import { formatPublicDate, publicAssetUrl } from '@/lib/public-portal';
+import { type } from 'os';
 
 const campusHero='/fipp-campus-hero.png';
 
@@ -66,7 +67,6 @@ export function V4Home() {
         <div className="v5-shell">
           <div className="v5-hero-copy">
             <span>DEWAN PERWAKILAN MAHASISWA</span>
-            <h1>{savedHome.title??'DPM FIPP UNIMA'}</h1>
             <h2>{savedHome.subtitle??'Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.'}</h2>
             <p>{savedHome.paragraph??'DPM FIPP UNIMA hadir sebagai jembatan komunikasi antara mahasiswa dan fakultas untuk mendorong perubahan, transparansi, dan kemajuan bersama.'}</p>
             <div>
@@ -225,10 +225,11 @@ export function V4About() {
           <small>Beranda › Tentang</small>
           <h1>Tentang DPM FIPP UNIMA</h1>
           <h2>Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.</h2>
+       
           <p>{about?.description??'Informasi Tentang DPM belum diisi melalui Portal Admin.'}</p>
           <div className="v4-period">
             <span>
-              Berdiri Sejak<b>2006</b>
+              Dewan Perwakilan<b>Mahasiswa</b>
             </span>
             <span>
               Periode Aktif<b>{data.period.name??'Belum diatur'}</b>
