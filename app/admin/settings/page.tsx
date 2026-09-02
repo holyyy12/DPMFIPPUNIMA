@@ -1,3 +1,3 @@
 import { Settings } from 'lucide-react';
 import { AdminModulePage } from '@/components/admin-module-page';
-export default function Page(){return <AdminModulePage eyebrow="KONFIGURASI" title="Pengaturan portal" description="Atur periode aktif, SLA layanan, taksonomi, kebijakan retensi, dan kontrol keamanan." icon={Settings} metrics={[{value:'1',label:'Periode aktif',note:'2026/2027'},{value:'2 hari',label:'Target respons',note:'D-DAS'},{value:'0',label:'Insiden aktif',note:'Layanan normal'}]} actions={[{title:'Tinjau konfigurasi periode',description:'Pastikan periode aktif sesuai kalender kelembagaan.'},{title:'Validasi kebijakan layanan',description:'Periksa SLA dan retensi sebelum produksi.'}]} />}
+export default function Page(){return <AdminModulePage eyebrow="KONFIGURASI" title="Pengaturan portal" description="Atur periode aktif, SLA layanan, taksonomi, kebijakan retensi, dan kontrol keamanan." icon={Settings} kind="settings" />}

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   Bell,
@@ -25,57 +25,8 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
+import { useAdminPortal } from './use-admin-portal';
 
-const cases = [
-  [
-    'DAS-2026-0005',
-    'Akademik',
-    'Tinggi',
-    'Masuk',
-    'BEM Fakultas',
-    '20 Mei 2026 10:23',
-  ],
-  [
-    'DAS-2026-0004',
-    'Sarana & Prasarana',
-    'Sedang',
-    'Ditinjau',
-    'Wakil Dekan II',
-    '19 Mei 2026 14:18',
-  ],
-  [
-    'DAS-2026-0003',
-    'Kemahasiswaan',
-    'Tinggi',
-    'Ditindaklanjuti',
-    'BEM Fakultas',
-    '18 Mei 2026 09:31',
-  ],
-  [
-    'DAS-2026-0002',
-    'Akademik',
-    'Rendah',
-    'Selesai',
-    'Wakil Dekan I',
-    '17 Mei 2026 16:05',
-  ],
-  [
-    'DAS-2026-0001',
-    'Keuangan',
-    'Sedang',
-    'Diteruskan',
-    'Bagian Keuangan',
-    '16 Mei 2026 11:47',
-  ],
-];
-const stats = [
-  ['Periode Aktif', '2026–2027', 'Tahun Akademik'],
-  ['Organisasi Aktif', '13', 'Organisasi terdaftar'],
-  ['Total Aspirasi', '5', 'Sejak periode ini'],
-  ['Publikasi Aktif', '24', 'Berita & informasi'],
-  ['Pengguna', '21', 'Pengguna aktif'],
-  ['Komentar Hari Ini', '8', 'Komentar baru'],
-];
 function PageTitle({
   title,
   copy,
@@ -100,16 +51,35 @@ function Badge({ children }: { children: React.ReactNode }) {
 }
 
 export function AdminDashboardV4() {
+  const { data, loading, error } = useAdminPortal();
   const [dashboardUnit, setDashboardUnit] = useState('Semua');
   const [dashboardPeriod, setDashboardPeriod] = useState('Semua');
+  const currentPeriod = data.periods.find((item) => item.is_current);
+  const statusLabel: Record<string, string> = { received: 'Masuk', triaged: 'Ditinjau', assigned: 'Diteruskan', in_progress: 'Ditindaklanjuti', waiting_for_information: 'Ditindaklanjuti', resolved: 'Selesai', closed: 'Selesai', rejected_out_of_scope: 'Selesai', reopened: 'Masuk' };
+  const liveCases = data.ddasCases.map((item) => [
+    item.ticket_public_id,
+    item.subject,
+    item.priority,
+    statusLabel[item.status] ?? item.status,
+    item.assigned_unit ?? 'Belum ditugaskan',
+    new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.submitted_at)),
+  ]);
+  const liveStats = [
+    ['Periode Aktif', currentPeriod?.name ?? 'Belum diatur', 'Tahun Akademik'],
+    ['Organisasi Aktif', String(data.organizations.filter((x) => x.status === 'active').length), 'Organisasi terdaftar'],
+    ['Total Aspirasi', String(data.ddasCases.length), 'Data Supabase'],
+    ['Publikasi Aktif', String(data.contents.filter((x) => x.status === 'published').length), 'Berita & informasi'],
+    ['Pengguna', String(data.users.filter((x) => x.status === 'active').length), 'Pengguna aktif'],
+    ['Komentar Hari Ini', String(data.comments.filter((x) => new Date(x.created_at).toDateString() === new Date().toDateString()).length), 'Komentar baru'],
+  ];
   const dashboardCases = useMemo(
     () =>
-      cases.filter(
+      liveCases.filter(
         (item) =>
           (dashboardUnit === 'Semua' || item[4] === dashboardUnit) &&
           (dashboardPeriod === 'Semua' || item[5].startsWith(dashboardPeriod)),
       ),
-    [dashboardUnit, dashboardPeriod],
+    [dashboardUnit, dashboardPeriod, liveCases],
   );
   const workflowStatuses = [
     'Masuk',
@@ -124,8 +94,9 @@ export function AdminDashboardV4() {
         title="Dashboard"
         copy="Kelola dan pantau aktivitas DPM FIPP UNIMA secara menyeluruh."
       />
+      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
       <div className="v4-admin-stats">
-        {stats.map(([a, b, c], i) => (
+        {liveStats.map(([a, b, c], i) => (
           <article key={a}>
             <span>
               {i === 0 ? (
@@ -160,7 +131,7 @@ export function AdminDashboardV4() {
             aria-label="Saring unit penanggung jawab"
           >
             <option value="Semua">Semua Unit</option>
-            {[...new Set(cases.map((item) => item[4]))].map((item) => (
+            {[...new Set(liveCases.map((item) => item[4]))].map((item) => (
               <option key={item}>{item}</option>
             ))}
           </select>
@@ -241,10 +212,11 @@ export function AdminDashboardV4() {
                 ['Kelola Organisasi', Users],
                 ['Kelola Notifikasi', Bell],
                 ['Lihat Laporan', Activity],
-              ].map(([x, I]) => {
+              ].map(([x, I], index) => {
                 const Icon = I as typeof Send;
+                const href = ['/ddas', '/admin/cms', '/admin/iam', '/admin/organization', '/admin/notifications', '/admin/audit'][index];
                 return (
-                  <button key={x as string}>
+                  <button key={x as string} onClick={() => location.assign(href)}>
                     <Icon />
                     {x as string}
                   </button>
@@ -272,6 +244,30 @@ export function AdminDashboardV4() {
 }
 
 export function CmsEditorV4() {
+  const { data, loading, error, message, runAction } = useAdminPortal();
+  const [selectedId, setSelectedId] = useState('');
+  const selected = data.contents.find((item) => item.id === selectedId) ?? data.contents[0];
+  const [title, setTitle] = useState('');
+  const [slug, setSlug] = useState('');
+  const [summary, setSummary] = useState('');
+  const [bodyText, setBodyText] = useState('');
+  const [contentTypeId, setContentTypeId] = useState('');
+  const [language, setLanguage] = useState('id');
+  const [fileName, setFileName] = useState('Belum ada media dipilih');
+  useEffect(() => {
+    const wanted = new URLSearchParams(location.search).get('id');
+    if (wanted) setSelectedId(wanted);
+  }, []);
+  useEffect(() => {
+    if (!selected) return;
+    setTitle(selected.title); setSlug(selected.slug); setSummary(selected.summary); setContentTypeId(selected.content_type_id ?? '');
+    setBodyText(typeof selected.body === 'string' ? selected.body : JSON.stringify(selected.body));
+  }, [selected?.id]);
+  const save = (status: 'draft' | 'scheduled' | 'published') => {
+    if (!title.trim() || !slug.trim()) return alert('Judul dan slug wajib diisi.');
+    return runAction('content.save', { id: selected?.id ?? '', title: title.trim(), slug: slug.trim(), summary: summary.trim(), body: { schemaVersion: 1, blocks: [{ type: 'paragraph', text: bodyText }] }, status, contentTypeId, unitId: selected?.unit_id ?? data.units[0]?.id ?? '', language, visibility: 'public' }, status === 'published' ? 'Konten berhasil dipublikasikan.' : status === 'scheduled' ? 'Konten berhasil dijadwalkan.' : 'Draft berhasil disimpan.');
+  };
+  const exportContent = () => { const blob=new Blob([JSON.stringify({ title,slug,summary,body:bodyText },null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${slug || 'konten'}.json`;a.click();URL.revokeObjectURL(a.href); };
   return (
     <div className="v4-admin-content">
       <PageTitle
@@ -279,39 +275,40 @@ export function CmsEditorV4() {
         copy="Kelola konten Berita, Kajian, Publikasi, Media, Program Kerja, dan lainnya tanpa coding."
         actions={
           <>
-            <button>
+            <button onClick={() => void save('draft')}>
               <Save /> Simpan Draft
             </button>
-            <button>◉ Preview</button>
-            <button>
+            <button onClick={() => selected ? window.open(`/publikasi/${selected.slug}`, '_blank', 'noopener,noreferrer') : alert('Simpan konten terlebih dahulu untuk melihat pratinjau.')}>◉ Preview</button>
+            <button onClick={() => void save('scheduled')}>
               <CalendarDays /> Jadwalkan
             </button>
-            <button className="primary">Publikasikan⌄</button>
+            <button className="primary" onClick={() => void save('published')}>Publikasikan⌄</button>
           </>
         }
       />
+      {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
       <div className="v4-editor-grid">
         <section className="v4-panel v4-editor">
           <h2>Informasi Konten</h2>
           <div className="v4-form-two">
             <label>
               Judul *
-              <input defaultValue="Meningkatkan Literasi Digital Mahasiswa di Era AI" />
+              <input value={title} onChange={(event) => { setTitle(event.target.value); if (!selected) setSlug(event.target.value.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')); }} />
             </label>
             <label>
               Slug *
-              <input defaultValue="meningkatkan-literasi-digital-mahasiswa-era-ai" />
+              <input value={slug} onChange={(event) => setSlug(event.target.value)} />
             </label>
           </div>
           <label>
             Ringkasan / Excerpt *
-            <textarea defaultValue="Literasi digital menjadi kompetensi penting bagi mahasiswa dalam menghadapi transformasi teknologi berbasis Artificial Intelligence." />
+            <textarea value={summary} onChange={(event) => setSummary(event.target.value)} />
           </label>
           <div className="v4-form-four">
             <label>
               Tipe Konten
-              <select>
-                <option>Berita</option>
+              <select value={contentTypeId} onChange={(event) => setContentTypeId(event.target.value)}>
+                <option value="">Pilih tipe</option>{data.contentTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
             </label>
             <label>
@@ -322,14 +319,14 @@ export function CmsEditorV4() {
             </label>
             <label>
               Penulis
-              <select>
-                <option>Super Admin</option>
+              <select value={data.me?.id ?? ''} disabled>
+                <option value={data.me?.id}>{data.me?.name ?? 'Administrator'}</option>
               </select>
             </label>
             <label>
               Bahasa
-              <select>
-                <option>Bahasa Indonesia</option>
+              <select value={language} onChange={(event) => setLanguage(event.target.value)}>
+                <option value="id">Bahasa Indonesia</option><option value="en">English</option>
               </select>
             </label>
           </div>
@@ -342,19 +339,9 @@ export function CmsEditorV4() {
               className="v4-rich-body"
               contentEditable
               suppressContentEditableWarning
+              onInput={(event) => setBodyText(event.currentTarget.innerText)}
             >
-              <h3>Pendahuluan</h3>
-              <p>
-                Perkembangan teknologi digital dan kecerdasan buatan telah
-                mengubah cara kita belajar, bekerja, dan berinteraksi. Mahasiswa
-                perlu memiliki literasi digital yang kuat.
-              </p>
-              <h3>Strategi Penguatan Literasi Digital</h3>
-              <ul>
-                <li>Pelatihan rutin dan workshop tematik.</li>
-                <li>Integrasi literasi digital dalam kurikulum.</li>
-                <li>Pemanfaatan platform pembelajaran digital.</li>
-              </ul>
+              {bodyText}
             </div>
           </label>
           <label>
@@ -378,7 +365,8 @@ export function CmsEditorV4() {
               <span key={i}>{i}</span>
             ))}
           </div>
-          <button>
+          <input id="cms-media-file" type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" hidden onChange={(event) => setFileName(event.target.files?.[0]?.name ?? 'Belum ada media dipilih')} />
+          <button onClick={() => document.getElementById('cms-media-file')?.click()}>
             <Upload /> Tambah Gambar
           </button>
           <label>
@@ -394,12 +382,9 @@ export function CmsEditorV4() {
           <section className="v4-panel v4-preview">
             <h2>Pratinjau Konten</h2>
             <Badge>BERITA</Badge>
-            <h3>Meningkatkan Literasi Digital Mahasiswa di Era AI</h3>
-            <p>
-              Literasi digital menjadi kompetensi penting bagi mahasiswa dalam
-              menghadapi transformasi teknologi.
-            </p>
-            <small>SA　Super Admin　　　　　　20 Mei 2026</small>
+            <h3>{title || 'Judul konten'}</h3>
+            <p>{summary || 'Ringkasan konten akan tampil di sini.'}</p>
+            <small>{data.me?.name ?? 'Administrator'}　　{fileName}</small>
           </section>
           <section className="v4-panel">
             <h2>Revisi & Riwayat</h2>
@@ -414,10 +399,10 @@ export function CmsEditorV4() {
           </section>
           <section className="v4-panel v4-danger">
             <h2>Aksi Lanjutan</h2>
-            <button>Duplikasi Konten</button>
-            <button>Ekspor Konten (PDF)</button>
-            <button>Rollback ke Revisi</button>
-            <button>
+            <button onClick={() => { setSelectedId(''); setTitle(`${title} (Salinan)`); setSlug(`${slug}-salinan`); }}>Duplikasi Konten</button>
+            <button onClick={exportContent}>Ekspor Konten</button>
+            <button onClick={() => selected && location.reload()}>Rollback ke Data Tersimpan</button>
+            <button disabled={!selected} onClick={() => selected && confirm('Hapus konten ini?') && void runAction('content.delete', { id: selected.id }, 'Konten berhasil dihapus.').then(() => { setSelectedId(''); setTitle(''); setSlug(''); setSummary(''); setBodyText(''); })}>
               <Trash2 /> Hapus Konten
             </button>
           </section>
@@ -428,6 +413,10 @@ export function CmsEditorV4() {
 }
 
 export function DdasCaseV4() {
+  const { data, loading, error, message, runAction } = useAdminPortal();
+  const current = data.ddasCases[0];
+  const [publicUpdate, setPublicUpdate] = useState('');
+  const [internalNote, setInternalNote] = useState('');
   const timeline = [
     'Masuk',
     'Ditinjau',
@@ -439,17 +428,18 @@ export function DdasCaseV4() {
     <div className="v4-admin-content">
       <PageTitle
         title="Detail Kasus D-DAS"
-        copy="Nomor tiket DAS-2026-0005 · data publik telah disanitasi."
-        actions={<button>← Kembali</button>}
+        copy={current ? `Nomor tiket ${current.ticket_public_id} · data publik telah disanitasi.` : 'Belum ada kasus D-DAS pada database.'}
+        actions={<button onClick={() => location.assign('/admin/dashboard')}>← Kembali</button>}
       />
+      {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
       <div className="v4-case-summary">
         {[
-          ['No. Tiket', 'DAS-2026-0005'],
-          ['Kategori', 'Akademik'],
-          ['Prioritas', 'Tinggi'],
-          ['Unit Penanggung Jawab', 'BEM Fakultas'],
-          ['Status Saat Ini', 'Masuk'],
-          ['SLA Respon', '1,8 hari'],
+          ['No. Tiket', current?.ticket_public_id ?? '—'],
+          ['Kategori', current?.subject ?? '—'],
+          ['Prioritas', current?.priority ?? '—'],
+          ['Unit Penanggung Jawab', current?.assigned_unit ?? 'Belum ditugaskan'],
+          ['Status Saat Ini', current?.status ?? '—'],
+          ['SLA Respon', current?.submitted_at ? `${Math.max(0, Math.round((Date.now() - new Date(current.submitted_at).getTime()) / 86400000 * 10) / 10)} hari` : '—'],
         ].map((x) => (
           <span key={x[0]}>
             <small>{x[0]}</small>
@@ -461,10 +451,7 @@ export function DdasCaseV4() {
         <aside>
           <section className="v4-panel">
             <h2>Ringkasan Aspirasi (Publik)</h2>
-            <p>
-              Mahasiswa mengeluhkan keterlambatan pengumuman hasil ujian akhir
-              semester yang berdampak pada rencana akademik berikutnya.
-            </p>
+            <p>{current?.subject ?? 'Belum ada ringkasan aspirasi.'}</p>
             <div className="v4-mini-grid">
               <span>
                 Dibuat oleh<b>Pengguna (Disamarkan)</b>
@@ -482,16 +469,12 @@ export function DdasCaseV4() {
           </section>
           <section className="v4-panel v4-timeline">
             <h2>Timeline Publik (Sanitized)</h2>
-            {timeline.map((x, i) => (
-              <p key={x} className={i < 3 ? 'done' : ''}>
+            {(current?.timeline.length ? current.timeline : timeline.map((state) => ({ state, message: 'Menunggu proses', occurredAt: '' }))).map((item, i) => (
+              <p key={`${item.state}-${i}`} className={item.occurredAt ? 'done' : ''}>
                 <Check />
                 <span>
-                  <b>{x}</b>
-                  <small>
-                    {i < 3
-                      ? '20 Mei 2026 · ' + (10 + i) + ':' + (i ? '10' : '23')
-                      : 'Menunggu proses'}
-                  </small>
+                  <b>{item.state}</b>
+                  <small>{item.occurredAt ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.occurredAt)) : item.message}</small>
                 </span>
               </p>
             ))}
@@ -504,27 +487,28 @@ export function DdasCaseV4() {
               <span>📎 Lampiran Internal</span>
               <span>Penugasan Unit</span>
             </nav>
-            <textarea placeholder="Tulis catatan internal (tidak akan ditampilkan ke publik)..." />
-            <button className="primary">
+            <textarea value={internalNote} onChange={(event) => setInternalNote(event.target.value)} placeholder="Tulis catatan internal (tidak akan ditampilkan ke publik)..." />
+            <button className="primary" disabled={!current || !internalNote.trim()} onClick={() => current && void runAction('ddas.internal_note', { id: current.id, message: internalNote.trim() }, 'Catatan internal berhasil disimpan.').then(() => setInternalNote(''))}>
               <LockKeyhole /> Simpan Catatan
             </button>
           </section>
           <section className="v4-panel">
             <h2>Pesan Pembaruan Publik</h2>
-            <textarea placeholder="Tulis pembaruan untuk diinformasikan kepada pelapor..." />
-            <button className="primary">
+            <textarea value={publicUpdate} onChange={(event) => setPublicUpdate(event.target.value)} placeholder="Tulis pembaruan untuk diinformasikan kepada pelapor..." />
+            <button className="primary" disabled={!current || !publicUpdate.trim()} onClick={() => current && void runAction('ddas.public_update', { id: current.id, message: publicUpdate.trim() }, 'Pembaruan publik berhasil dikirim.').then(() => setPublicUpdate(''))}>
               <Send /> Kirim Pembaruan
             </button>
           </section>
           <section className="v4-panel">
             <h2>Ubah Status Workflow</h2>
             <div className="v4-status-buttons">
-              {timeline.map((x) => (
-                <button key={x}>{x}</button>
-              ))}
+              {timeline.map((x, index) => {
+                const status = ['received','triaged','assigned','in_progress','resolved'][index];
+                return <button key={x} disabled={!current} onClick={() => current && void runAction('ddas.status', { id: current.id, status, message: `Status aspirasi diperbarui menjadi ${x}.` }, 'Status workflow berhasil diperbarui.')}>{x}</button>
+              })}
             </div>
             <p className="v4-blue-note">
-              <b>Status saat ini: Masuk</b>
+              <b>Status saat ini: {current?.status ?? '—'}</b>
               <br />
               Aspirasi baru diterima dan sedang dalam antrean peninjauan.
             </p>
@@ -563,46 +547,12 @@ export function DdasCaseV4() {
   );
 }
 
-const comments = [
-  {
-    author: 'Anonim',
-    status: 'Perlu Penyaringan',
-    body: 'Apakah ada perbedaan syarat untuk mahasiswa aktif angkatan lama?',
-    source: 'Beranda',
-    date: '20 Mei 2026',
-  },
-  {
-    author: 'Bintang S.',
-    status: 'Dipublikasikan',
-    body: 'Keren! Website baru makin informatif.',
-    source: 'Berita',
-    date: '19 Mei 2026',
-  },
-  {
-    author: 'Anonim',
-    status: 'Perlu Penyaringan',
-    body: 'Butuh info lebih lanjut tentang pendaftaran',
-    source: 'Berita',
-    date: '18 Mei 2026',
-  },
-  {
-    author: 'Ananda N.',
-    status: 'Dipublikasikan',
-    body: 'Terima kasih atas informasinya.',
-    source: 'Beranda',
-    date: '17 Mei 2026',
-  },
-  {
-    author: 'Mario K.',
-    status: 'Ditolak',
-    body: 'Promosi tidak relevan',
-    source: 'Beranda',
-    date: '16 Mei 2026',
-  },
-];
 export function CommentsV4() {
+  const { data, loading, error, reload } = useAdminPortal();
+  const comments = data.comments.map((item) => ({ id: item.id, author: item.display_mode === 'anonymous' ? 'Anonim' : item.display_name || 'Pengguna', status: item.status === 'pending' ? 'Perlu Penyaringan' : item.status === 'published' ? 'Dipublikasikan' : item.status === 'rejected' ? 'Ditolak' : item.status, body: item.body, source: item.resource_type === 'page' ? 'Beranda' : item.resource_type, date: new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(item.created_at)) }));
   const [source, setSource] = useState('Semua');
   const [status, setStatus] = useState('Semua');
+  const [sort, setSort] = useState('Terbaru');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(0);
   const filtered = useMemo(
@@ -614,22 +564,29 @@ export function CommentsV4() {
           `${item.author} ${item.body}`
             .toLowerCase()
             .includes(query.toLowerCase()),
-      ),
-    [source, status, query],
+      ).sort((a, b) => sort === 'Terlama' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)),
+    [comments, source, status, query, sort],
   );
-  const active = filtered[selected] ?? filtered[0] ?? comments[0];
+  const active = filtered[selected] ?? filtered[0] ?? { id: '', author: '—', status: 'Kosong', body: 'Belum ada komentar pada database.', source: '—', date: '—' };
+  async function moderate(status: 'published' | 'hidden' | 'rejected', reasonCode: 'approved' | 'other') {
+    if (!active.id) return;
+    const response = await fetch('/api/admin/comments', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ commentId: active.id, status, reasonCode }) });
+    if (!response.ok) return alert('Keputusan penyaringan gagal disimpan.');
+    await reload();
+  }
   return (
     <div className="v4-admin-content">
       <PageTitle
         title="Komentar & Penyaringan"
         copy="Tinjau, saring, dan kelola semua komentar dari Beranda, Berita, dan halaman lainnya."
       />
+      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
       <div className="v4-comment-stats">
         {[
-          ['Total Komentar', '421'],
-          ['Perlu Penyaringan', '24'],
-          ['Anonim', '153'],
-          ['Dihapus Hari Ini', '6'],
+          ['Total Komentar', String(comments.length)],
+          ['Perlu Penyaringan', String(comments.filter((x) => x.status === 'Perlu Penyaringan').length)],
+          ['Anonim', String(comments.filter((x) => x.author === 'Anonim').length)],
+          ['Ditolak', String(comments.filter((x) => x.status === 'Ditolak').length)],
         ].map((x) => (
           <article key={x[0]}>
             <MessageSquare />
@@ -650,8 +607,7 @@ export function CommentsV4() {
           aria-label="Saring berdasarkan sumber"
         >
           <option value="Semua">Semua Sumber</option>
-          <option value="Beranda">Beranda</option>
-          <option value="Berita">Berita</option>
+          {[...new Set(comments.map((item) => item.source))].map((item) => <option key={item}>{item}</option>)}
         </select>
         <select
           value={status}
@@ -666,8 +622,8 @@ export function CommentsV4() {
           <option value="Dipublikasikan">Dipublikasikan</option>
           <option value="Ditolak">Ditolak</option>
         </select>
-        <select>
-          <option>Terbaru</option>
+        <select value={sort} onChange={(event) => setSort(event.target.value)}>
+          <option>Terbaru</option><option>Terlama</option>
         </select>
         <label>
           <input
@@ -749,11 +705,11 @@ export function CommentsV4() {
             </article>
           ))}
           <footer>
-            <button>
+            <button onClick={() => void moderate('hidden', 'other')}>
               <Trash2 /> Hapus Thread
             </button>
-            <button>Lihat Thread Lengkap</button>
-            <button className="primary">
+            <button onClick={() => active.id && location.assign(`/admin/comments?comment=${active.id}`)}>Lihat Thread Lengkap</button>
+            <button className="primary" onClick={() => void moderate('published', 'approved')}>
               <ShieldCheck /> Saring Komentar
             </button>
           </footer>
@@ -763,16 +719,13 @@ export function CommentsV4() {
   );
 }
 
-const users = [
-  ['Dr. Jane Mona, M.Pd', 'Pimpinan', 'Super Admin', 'Aktif'],
-  ['Reynold R. Wuisan', 'Komisi 1', 'Chairperson', 'Aktif'],
-  ['Angelica M. Tampi', 'Sekretariat', 'Secretary', 'Aktif'],
-  ['Michael P. Langi', 'Komisi 2', 'DPM Units', 'Aktif'],
-  ['Stevani K. Runtuwerne', 'Humas', 'DPM Units', 'Aktif'],
-  ['Brigita T. Warouw', 'Komisi 3', 'DPM Units', 'Aktif'],
-  ['Pengurus HIMAPSI', 'HIMAPSI', 'ORMAWA', 'Aktif'],
-];
 export function IamV4() {
+  const { data, loading, error } = useAdminPortal();
+  const users = data.users.map((user) => {
+    const role = user.roles[0];
+    const unit = data.units.find((item) => item.id === role?.unitId);
+    return [user.display_name, unit?.name ?? 'Semua Unit', role?.name ?? 'Tanpa Role', user.status === 'active' ? 'Aktif' : user.status, user.email_normalized ?? '', user.last_active_at ?? ''];
+  });
   const [userQuery, setUserQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('Semua');
   const [roleFilter, setRoleFilter] = useState('Semua');
@@ -796,6 +749,7 @@ export function IamV4() {
         title="Pengguna, Role, Permission & DPM Units"
         copy="Kelola akun pengguna, role, izin akses, dan unit DPM secara terpusat dan aman."
       />
+      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
       <div className="v5-role-note">
         <ShieldCheck />
         <p>
@@ -816,7 +770,7 @@ export function IamV4() {
           'DPM Units',
           'Akses per Unit',
         ].map((x, i) => (
-          <button className={i === 1 ? 'active' : ''} key={x}>
+          <button className={i === 1 ? 'active' : ''} key={x} onClick={() => location.assign(x === 'Permission Matrix' ? '/admin/permission' : `#${x.toLowerCase().replaceAll(' ', '-')}`)}>
             {x}
           </button>
         ))}
@@ -828,7 +782,7 @@ export function IamV4() {
               <h2>Daftar Pengguna</h2>
               <p>Kelola akun pengguna dan penetapan role berdasarkan unit.</p>
             </div>
-            <button className="primary">
+            <button className="primary" onClick={() => location.assign('/admin/settings?tab=users')}>
               <Plus /> Tambah Pengguna
             </button>
           </header>
@@ -878,9 +832,7 @@ export function IamV4() {
               <p key={u[0]}>
                 <span>
                   <b>{u[0]}</b>
-                  <small>
-                    {u[0].toLowerCase().replaceAll(' ', '.')}@unima.ac.id
-                  </small>
+                  <small>{u[4]}</small>
                 </span>
                 <span>
                   <Badge>{u[1]}</Badge>
@@ -891,7 +843,7 @@ export function IamV4() {
                 <span>
                   <Badge>{u[3]}</Badge>
                 </span>
-                <span>{20 - i} Mei 2026</span>
+                <span>{u[5] ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(u[5])) : 'Belum pernah'}</span>
               </p>
             ))}
             {!filteredUsers.length && (
@@ -905,21 +857,16 @@ export function IamV4() {
           <section className="v4-panel">
             <header>
               <h2>DPM Units</h2>
-              <button className="primary">
+              <button className="primary" onClick={() => location.assign('/admin/settings?tab=units')}>
                 <Plus /> Tambah Unit
               </button>
             </header>
-            {[
-              ['Komisi 1', 'KOM1', '12'],
-              ['Komisi 2', 'KOM2', '9'],
-              ['Humas', 'HUMAS', '7'],
-              ['Komisi 3', 'KOM3', '11'],
-            ].map((x) => (
-              <p className="v4-unit-row" key={x[0]}>
-                <b>{x[0]}</b>
-                <span>{x[1]}</span>
-                <span>{x[2]}</span>
-                <button>✎</button>
+            {data.units.map((x) => (
+              <p className="v4-unit-row" key={x.id}>
+                <b>{x.name}</b>
+                <span>{x.code}</span>
+                <span>{data.users.filter((user) => user.roles.some((role) => role.unitId === x.id)).length}</span>
+                <button onClick={() => location.assign(`/admin/settings?tab=units&id=${x.id}`)}>✎</button>
               </p>
             ))}
           </section>
@@ -936,26 +883,13 @@ export function IamV4() {
         <h2>Permission Matrix</h2>
         <div className="v4-permission-grid">
           <b>Permission</b>
-          {[
-            'Super Admin',
-            'Chairperson',
-            'Secretary',
-            'DPM Units',
-            'ORMAWA',
-          ].map((x) => (
-            <b key={x}>{x}</b>
+          {['super_admin','chairperson','secretary','dpm_unit','ormawa'].map((key) => (
+            <b key={key}>{data.roles.find((role) => role.key === key)?.name ?? key}</b>
           ))}
-          {[
-            'content.publish',
-            'ddas.update.assigned',
-            'comments.moderate',
-            'media.delete',
-            'users.manage',
-            'auditlog.view',
-          ].flatMap((x, i) => [
-            <span key={x}>{x}</span>,
-            ...[0, 1, 2, 3, 4].map((j) => (
-              <i key={x + j}>{j === 0 || j <= 3 - (i % 3) ? '✓' : '□'}</i>
+          {data.permissions.slice(0, 8).flatMap((permission) => [
+            <span key={permission.key}>{permission.key}</span>,
+            ...['super_admin','chairperson','secretary','dpm_unit','ormawa'].map((roleKey) => (
+              <i key={permission.key + roleKey}>{permission.roles?.[roleKey] ? '✓' : '□'}</i>
             )),
           ])}
         </div>

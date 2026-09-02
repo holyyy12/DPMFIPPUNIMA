@@ -1,3 +1,3 @@
 import { BookOpen } from 'lucide-react';
 import { AdminModulePage } from '@/components/admin-module-page';
-export default function Page(){return <AdminModulePage eyebrow="PUSTAKA MEDIA" title="Media & dokumen" description="Kelola aset, metadata, teks alternatif, serta masa retensi dokumen publik." icon={BookOpen} metrics={[{value:'48',label:'Aset aktif',note:'Gambar dan dokumen'},{value:'3',label:'Perlu alt text',note:'Aksesibilitas'},{value:'2',label:'Mendekati retensi',note:'Perlu keputusan'}]} actions={[{title:'Lengkapi metadata aksesibel',description:'Tiga aset belum memiliki deskripsi alternatif.'},{title:'Tinjau masa retensi',description:'Dua dokumen memerlukan keputusan arsip.'}]} />}
+export default function Page(){return <AdminModulePage eyebrow="PUSTAKA MEDIA" title="Media & dokumen" description="Kelola aset, metadata, teks alternatif, serta masa retensi dokumen publik." icon={BookOpen} kind="media" />}

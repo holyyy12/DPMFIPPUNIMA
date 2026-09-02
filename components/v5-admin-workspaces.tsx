@@ -23,20 +23,20 @@ import {
   Vote,
 } from 'lucide-react';
 import Link from 'next/link';
-import { programs } from '@/lib/site-content';
+import { useAdminPortal } from './use-admin-portal';
 
-type ProgramDraft = (typeof programs)[number] & {
+type ProgramDraft = {
+  slug: string;
+  title: string;
+  copy: string;
+  unit: string;
+  media: 'photo' | 'video' | 'gallery';
+  image: string;
+  progress: number;
+  success: number;
   updateNote: string;
   updatedAt: string;
 };
-
-function initialProgramDrafts(): ProgramDraft[] {
-  return programs.map((program) => ({
-    ...program,
-    updateNote: 'Program berjalan sesuai rencana kerja periode 2026–2027.',
-    updatedAt: '20 Mei 2026',
-  }));
-}
 
 type OrganizationMember = {
   id: number;
@@ -45,49 +45,6 @@ type OrganizationMember = {
   unit: string;
   image: string;
 };
-
-const initialOrganizationMembers: OrganizationMember[] = [
-  {
-    id: 1,
-    role: 'Ketua Umum',
-    name: 'Reynold R. Wuisan',
-    unit: 'Pimpinan',
-    image:
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=240&q=80',
-  },
-  {
-    id: 2,
-    role: 'Sekretaris Umum',
-    name: 'Angelica M. Tampi',
-    unit: 'Sekretariat',
-    image:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=240&q=80',
-  },
-  {
-    id: 3,
-    role: 'Ketua Komisi 1',
-    name: 'Michael P. Langi',
-    unit: 'Legislasi & Kebijakan',
-    image:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=240&q=80',
-  },
-  {
-    id: 4,
-    role: 'Ketua Komisi 2',
-    name: 'Stevani K. Runtuwerne',
-    unit: 'Pengawasan & Advokasi',
-    image:
-      'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=240&q=80',
-  },
-  {
-    id: 5,
-    role: 'Koordinator Humas',
-    name: 'Brigita T. Warouw',
-    unit: 'Hubungan Masyarakat',
-    image:
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=240&q=80',
-  },
-];
 
 function Title({
   title,
@@ -146,12 +103,19 @@ function Metric({
 }
 
 export function SiteContentAdmin() {
+  const { data, loading, error, message, runAction } = useAdminPortal();
+  const stored = data.settings['site.home'] as Partial<{ title:string; subtitle:string; paragraph:string; cta1:string; cta1Href:string; cta2:string; cta2Href:string }> | undefined;
+  const [form, setForm] = useState({ title:'DPM FIPP UNIMA', subtitle:'Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.', paragraph:'DPM FIPP UNIMA hadir sebagai jembatan komunikasi antara mahasiswa dan fakultas untuk mendorong perubahan, transparansi, dan kemajuan bersama.', cta1:'Jelajahi DPM', cta1Href:'/tentang', cta2:'Kirim Aspirasi', cta2Href:'/ddas' });
+  useEffect(() => { if (stored) setForm((current) => ({ ...current, ...stored })); }, [JSON.stringify(stored)]);
+  const field = (key: keyof typeof form, value:string) => setForm((current) => ({ ...current, [key]:value }));
   return (
     <div className="v4-admin-content v5-admin-workspace">
       <Title
         title="Tampilan Situs & Aset"
         copy="Kelola Hero Beranda, teks institusional, logo, foto, dan navigasi tanpa mengubah kode."
+        onAction={() => void runAction('setting.save', { namespace:'site', key:'home', value:form, isPublic:true }, 'Tampilan situs berhasil disimpan ke Supabase.')}
       />
+      {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
       <div className="v5-admin-layout">
         <main>
           <section className="v4-panel v5-admin-form">
@@ -161,22 +125,22 @@ export function SiteContentAdmin() {
             </header>
             <label>
               Judul utama
-              <input defaultValue="DPM FIPP UNIMA" />
+              <input value={form.title} onChange={(event) => field('title',event.target.value)} />
             </label>
             <label>
               Subjudul
-              <input defaultValue="Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa." />
+              <input value={form.subtitle} onChange={(event) => field('subtitle',event.target.value)} />
             </label>
             <label>
               Paragraf
-              <textarea defaultValue="DPM FIPP UNIMA hadir sebagai jembatan komunikasi antara mahasiswa dan fakultas untuk mendorong perubahan, transparansi, dan kemajuan bersama." />
+              <textarea value={form.paragraph} onChange={(event) => field('paragraph',event.target.value)} />
             </label>
             <label>
               Gambar Hero
               <div className="v5-asset-field">
                 <img src="/fipp-campus-hero.png" alt="Pratinjau Hero" />
                 <span>
-                  <button>
+                  <button onClick={() => location.assign('/admin/media')}>
                     <Upload /> Ganti Gambar
                   </button>
                   <small>JPG, PNG, WebP · rekomendasi 2400×1000 px</small>
@@ -190,18 +154,18 @@ export function SiteContentAdmin() {
             </header>
             <div className="v5-form-grid">
               <label>
-                CTA 1<input defaultValue="Jelajahi DPM" />
+                CTA 1<input value={form.cta1} onChange={(event) => field('cta1',event.target.value)} />
               </label>
               <label>
                 Tujuan
-                <input defaultValue="/tentang" />
+                <input value={form.cta1Href} onChange={(event) => field('cta1Href',event.target.value)} />
               </label>
               <label>
-                CTA 2<input defaultValue="Kirim Aspirasi" />
+                CTA 2<input value={form.cta2} onChange={(event) => field('cta2',event.target.value)} />
               </label>
               <label>
                 Tujuan
-                <input defaultValue="/ddas" />
+                <input value={form.cta2Href} onChange={(event) => field('cta2Href',event.target.value)} />
               </label>
             </div>
           </section>
@@ -215,20 +179,20 @@ export function SiteContentAdmin() {
               Logo Utama
               <div className="v5-logo-editor">
                 <img src="/dpm-crest.png" alt="Logo saat ini" />
-                <button>
+                <button onClick={() => location.assign('/admin/media')}>
                   <Upload /> Ganti Logo
                 </button>
               </div>
             </label>
             <label>
               Favicon
-              <button>
+              <button onClick={() => location.assign('/admin/media')}>
                 <Image /> Unggah Favicon
               </button>
             </label>
             <label>
               Gambar Social Preview
-              <button>
+              <button onClick={() => location.assign('/admin/media')}>
                 <Image /> Ganti Gambar
               </button>
             </label>
@@ -250,7 +214,7 @@ export function SiteContentAdmin() {
                   <b>{x}</b>
                   <small>Dapat diganti dari Media</small>
                 </span>
-                <button>Kelola</button>
+                <button onClick={() => location.assign('/admin/media')}>Kelola</button>
               </p>
             ))}
           </section>
@@ -261,8 +225,8 @@ export function SiteContentAdmin() {
 }
 
 export function ProgramsAdmin() {
-  const [items, setItems] = useState<ProgramDraft[]>(initialProgramDrafts);
-  const [selectedSlug, setSelectedSlug] = useState(programs[0].slug);
+  const [items, setItems] = useState<ProgramDraft[]>([]);
+  const [selectedSlug, setSelectedSlug] = useState('');
   const [status, setStatus] = useState('Memuat data dari penyimpanan pusat…');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -297,7 +261,7 @@ export function ProgramsAdmin() {
       );
       setStatus('Data terbaru berhasil dimuat dari penyimpanan pusat.');
     } catch {
-      setStatus('Penyimpanan pusat belum dapat dijangkau. Data bawaan tetap ditampilkan.');
+      setStatus('Penyimpanan pusat belum dapat dijangkau. Tidak ada data contoh yang ditampilkan.');
     }
   };
 
@@ -306,6 +270,7 @@ export function ProgramsAdmin() {
   }, []);
 
   const saveProgram = async () => {
+    if (!selected) return;
     setIsSaving(true);
     setStatus('Menyimpan pembaruan…');
     try {
@@ -326,6 +291,8 @@ export function ProgramsAdmin() {
       setIsSaving(false);
     }
   };
+
+  if (!selected) return <div className="v4-admin-content v7-program-admin"><Title title="Program Kerja" copy="Perbarui progres, indikator keberhasilan, catatan, dan publikasi media setiap program." action="Muat Ulang Data" onAction={() => void loadPrograms()} /><section className="v4-panel"><p className="v5-filter-empty">{status}</p></section></div>;
 
   return (
     <div className="v4-admin-content v7-program-admin">
@@ -398,26 +365,32 @@ export function ProgramsAdmin() {
 }
 
 export function InsightAdmin() {
+  const { data, loading, error } = useAdminPortal();
+  const studies = data.contents.filter((item) => ['study', 'kajian', 'news'].includes(item.content_type ?? ''));
+  const surveys = data.surveys;
+  const openEditor = (id?: string, type?: string) => location.assign(`/admin/cms?${new URLSearchParams({ ...(id ? { id } : {}), ...(type ? { type } : {}) })}`);
   return (
     <div className="v4-admin-content">
       <Title
         title="D-SIGHT"
         copy="Kelola kajian, survei, berita berbasis isu, serta ringkasan hasil sementara."
         action="Buat Konten D-SIGHT"
+        onAction={() => openEditor(undefined, 'study')}
       />
+      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
       <div className="v4-admin-stats">
         <Metric
           icon={BarChart3}
           label="Kajian Terbit"
-          value="18"
-          note="3 periode ini"
+          value={String(studies.filter((x) => x.status === 'published').length)}
+          note="Data Supabase"
         />
-        <Metric icon={Vote} label="Survei Aktif" value="3" note="650 respons" />
+        <Metric icon={Vote} label="Survei Aktif" value={String(surveys.filter((x) => x.status === 'active').length)} note={`${surveys.reduce((sum, x) => sum + Number(x.response_count), 0)} respons`} />
         <Metric
           icon={FileText}
           label="Berita Isu"
-          value="12"
-          note="4 bulan ini"
+          value={String(data.contents.filter((x) => x.content_type === 'news' && x.status === 'published').length)}
+          note="Berita terbit"
         />
       </div>
       <div className="v5-admin-layout">
@@ -427,50 +400,44 @@ export function InsightAdmin() {
               <h2>Daftar Kajian</h2>
               <p>Draft, review, dan publikasi kajian.</p>
             </div>
-            <button className="primary">
+            <button className="primary" onClick={() => openEditor(undefined, 'study')}>
               <Plus /> Tambah Kajian
             </button>
           </header>
           <div className="v5-admin-list">
-            {[
-              'Evaluasi Efektivitas Kurikulum MBKM',
-              'Aksesibilitas Fasilitas Belajar',
-              'Pemetaan Kebutuhan Layanan Konseling',
-            ].map((x, i) => (
-              <article key={x}>
+            {studies.map((x) => (
+              <article key={x.id}>
                 <BarChart3 />
                 <span>
-                  <b>{x}</b>
-                  <small>{i ? 'Published' : 'In Review'} · Komisi I</small>
+                  <b>{x.title}</b>
+                  <small>{x.status} · {x.unit_name ?? 'DPM FIPP'}</small>
                 </span>
-                <button>Edit</button>
+                <button onClick={() => openEditor(x.id)}>Edit</button>
               </article>
             ))}
+            {!studies.length && <p className="v5-filter-empty">Belum ada kajian pada database.</p>}
           </div>
         </section>
         <aside>
           <section className="v4-panel">
             <header>
               <h2>Survei Berjalan</h2>
-              <button className="primary">
+              <button className="primary" onClick={() => openEditor(undefined, 'survey')}>
                 <Plus /> Buat Survei
               </button>
             </header>
             <div className="v5-admin-list">
-              {[
-                'Kualitas layanan akademik',
-                'Fasilitas ruang belajar',
-                'Kesejahteraan mahasiswa',
-              ].map((x, i) => (
-                <article key={x}>
+              {surveys.map((x) => (
+                <article key={x.id}>
                   <Vote />
                   <span>
-                    <b>{x}</b>
-                    <small>{247 - i * 31} respons · Aktif</small>
+                    <b>{x.title}</b>
+                    <small>{x.response_count} respons · {x.status}</small>
                   </span>
-                  <button>Hasil</button>
+                  <button onClick={() => location.assign(`/admin/cms?survey=${x.id}`)}>Hasil</button>
                 </article>
               ))}
+              {!surveys.length && <p className="v5-filter-empty">Belum ada survei pada database.</p>}
             </div>
           </section>
         </aside>
@@ -480,13 +447,18 @@ export function InsightAdmin() {
 }
 
 export function TraceAdmin() {
+  const { data, loading, error } = useAdminPortal();
+  const records = data.contents.filter((item) => ['trace', 'd-trace', 'internal_publication'].includes(item.content_type ?? ''));
+  const edit = (id?: string) => location.assign(`/admin/cms?type=trace${id ? `&id=${id}` : ''}`);
   return (
     <div className="v4-admin-content">
       <Title
         title="D-TRACE"
         copy="Kelola publikasi internal DPM yang telah ditetapkan aman untuk dibaca publik."
         action="Tambah Publikasi"
+        onAction={() => edit()}
       />
+      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
       <div className="v5-admin-layout">
         <section className="v4-panel">
           <header>
@@ -494,28 +466,22 @@ export function TraceAdmin() {
               <h2>Publikasi Internal</h2>
               <p>Dokumen wajib melalui sanitasi dan klasifikasi publik.</p>
             </div>
-            <button className="primary">
+            <button className="primary" onClick={() => edit()}>
               <Plus /> Unggah
             </button>
           </header>
           <div className="v5-admin-list">
-            {[
-              'Laporan Kinerja Semester Ganjil',
-              'Laporan Tindak Lanjut Aspirasi',
-              'Rekapitulasi Rapat Dengar Pendapat',
-              'Laporan Realisasi Program Kerja Q1',
-            ].map((x, i) => (
-              <article key={x}>
+            {records.map((x) => (
+              <article key={x.id}>
                 <FileText />
                 <span>
-                  <b>{x}</b>
-                  <small>
-                    {i === 1 ? 'Menunggu review' : 'Published'} · PDF
-                  </small>
+                  <b>{x.title}</b>
+                  <small>{x.status} · {x.unit_name ?? 'DPM FIPP'}</small>
                 </span>
-                <button>Edit</button>
+                <button onClick={() => edit(x.id)}>Edit</button>
               </article>
             ))}
+            {!records.length && <p className="v5-filter-empty">Belum ada publikasi D-TRACE pada database.</p>}
           </div>
         </section>
         <aside>
@@ -531,14 +497,15 @@ export function TraceAdmin() {
             </label>
             <label>
               Periode
-              <select>
-                <option>2026–2027</option>
+              <select defaultValue={data.periods.find((x) => x.is_current)?.id}>
+                {data.periods.map((x) => <option value={x.id} key={x.id}>{x.name}</option>)}
               </select>
             </label>
             <label>
               Unit pemilik
               <select>
-                <option>Semua Unit DPM</option>
+                <option value="">Semua Unit DPM</option>
+                {data.units.map((x) => <option value={x.id} key={x.id}>{x.name}</option>)}
               </select>
             </label>
             <label>
@@ -553,20 +520,25 @@ export function TraceAdmin() {
 }
 
 export function ArchiveAdmin() {
+  const { data, loading, error } = useAdminPortal();
+  const archives = data.contents.filter((item) => ['archive', 'd-dar', 'document'].includes(item.content_type ?? ''));
+  const edit = (id?: string) => location.assign(`/admin/cms?type=archive${id ? `&id=${id}` : ''}`);
   return (
     <div className="v4-admin-content">
       <Title
         title="D-DAR"
         copy="Kelola direktori arsip cepat DPM dan seluruh ORMAWA berdasarkan organisasi dan periode."
         action="Tambah Arsip"
+        onAction={() => edit()}
       />
+      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
       <section className="v4-panel">
         <header>
           <div>
             <h2>Direktori Arsip</h2>
             <p>Dokumen, metadata, pemilik, dan hak akses.</p>
           </div>
-          <button className="primary">
+          <button className="primary" onClick={() => edit()}>
             <Upload /> Unggah Arsip
           </button>
         </header>
@@ -579,24 +551,20 @@ export function ArchiveAdmin() {
             <b>Akses</b>
             <b>Aksi</b>
           </div>
-          {[
-            ['DPM FIPP', 'LPJ 2025', 'LPJ'],
-            ['BEM FIPP', 'Arsip Program Kerja', 'Program'],
-            ['HIMAPSI', 'AD/ART 2026', 'Regulasi'],
-            ['HMJ PGSD', 'Dokumentasi Pengabdian', 'Dokumentasi'],
-          ].map((x) => (
-            <p key={x[1]}>
-              <span>{x[0]}</span>
+          {archives.map((x) => (
+            <p key={x.id}>
+              <span>{x.unit_name ?? 'DPM FIPP'}</span>
               <b>
                 <FileArchive />
-                {x[1]}
+                {x.title}
               </b>
-              <span>{x[2]}</span>
-              <span>2026</span>
-              <span>Publik</span>
-              <button>Edit</button>
+              <span>{x.content_type ?? 'Arsip'}</span>
+              <span>{new Date(x.updated_at).getFullYear()}</span>
+              <span>{x.status}</span>
+              <button onClick={() => edit(x.id)}>Edit</button>
             </p>
           ))}
+          {!archives.length && <p className="v5-filter-empty">Belum ada arsip pada database.</p>}
         </div>
       </section>
     </div>
@@ -604,27 +572,35 @@ export function ArchiveAdmin() {
 }
 
 export function NotificationsAdmin() {
+  const { data, loading, error, message, runAction } = useAdminPortal();
+  const unread = data.notifications.filter((item) => !item.read_at);
+  const storedPreferences = data.settings['notifications.preferences'] as Record<string, boolean> | undefined;
+  const preferenceLabels = ['Aspirasi prioritas','Permintaan approval','Konten menunggu review','Insiden layanan'];
+  const [preferences, setPreferences] = useState<Record<string, boolean>>({});
+  useEffect(() => { setPreferences(storedPreferences ?? Object.fromEntries(preferenceLabels.map((label) => [label,true]))); }, [JSON.stringify(storedPreferences)]);
   return (
     <div className="v4-admin-content">
       <Title
         title="Notifikasi"
         copy="Kelola notifikasi in-app, template, preferensi, dan status pengiriman."
         action="Buat Notifikasi"
+        onAction={() => location.assign('/admin/cms?type=notification')}
       />
+      {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
       <div className="v4-admin-stats">
         <Metric
           icon={Bell}
           label="Belum Dibaca"
-          value="12"
-          note="Semua pengguna"
+          value={String(unread.length)}
+          note="Untuk akun ini"
         />
         <Metric
           icon={Mail}
           label="Terkirim Hari Ini"
-          value="46"
-          note="98% berhasil"
+          value={String(data.notifications.filter((x) => new Date(x.created_at).toDateString() === new Date().toDateString()).length)}
+          note="Masuk hari ini"
         />
-        <Metric icon={Activity} label="Antrean" value="3" note="Dijadwalkan" />
+        <Metric icon={Activity} label="Antrean" value={String(data.notifications.filter((x) => x.priority === 'high' && !x.read_at).length)} note="Prioritas tinggi" />
       </div>
       <div className="v5-admin-layout">
         <section className="v4-panel">
@@ -632,24 +608,17 @@ export function NotificationsAdmin() {
             <h2>Notifikasi Terbaru</h2>
           </header>
           <div className="v5-admin-list">
-            {[
-              'Kajian baru menunggu review',
-              'Aspirasi prioritas tinggi diterima',
-              'Halaman ORMAWA meminta persetujuan',
-              'Dokumen D-TRACE siap terbit',
-            ].map((x, i) => (
-              <article key={x}>
+            {data.notifications.map((x) => (
+              <article key={x.id}>
                 <Bell />
                 <span>
-                  <b>{x}</b>
-                  <small>
-                    {i + 1} jam lalu ·{' '}
-                    {i === 2 ? 'Perlu tindakan' : 'Informasi'}
-                  </small>
+                  <b>{x.title}</b>
+                  <small>{x.message_safe} · {x.priority}</small>
                 </span>
-                <button>Tandai dibaca</button>
+                {x.read_at ? <small>Dibaca</small> : <button onClick={() => void runAction('notification.mark_read', { id: x.id }, 'Notifikasi ditandai dibaca.')}>Tandai dibaca</button>}
               </article>
             ))}
+            {!data.notifications.length && <p className="v5-filter-empty">Belum ada notifikasi.</p>}
           </div>
         </section>
         <aside>
@@ -657,14 +626,9 @@ export function NotificationsAdmin() {
             <header>
               <h2>Preferensi</h2>
             </header>
-            {[
-              'Aspirasi prioritas',
-              'Permintaan approval',
-              'Konten menunggu review',
-              'Insiden layanan',
-            ].map((x) => (
+            {preferenceLabels.map((x) => (
               <label key={x}>
-                <input type="checkbox" defaultChecked /> {x}
+                <input type="checkbox" checked={preferences[x] ?? true} onChange={(event) => { const next={...preferences,[x]:event.target.checked};setPreferences(next);void runAction('setting.save',{namespace:'notifications',key:'preferences',value:next,isPublic:false},'Preferensi notifikasi berhasil disimpan.'); }} /> {x}
               </label>
             ))}
           </section>
@@ -675,8 +639,16 @@ export function NotificationsAdmin() {
 }
 
 export function OrganizationAdmin() {
-  const [members, setMembers] = useState(initialOrganizationMembers);
+  const { data, loading, error, message, runAction } = useAdminPortal();
+  const storedMembers = data.settings['site.organization_structure'] as OrganizationMember[] | undefined;
+  const storedAbout = data.settings['site.about'] as { description?:string } | undefined;
+  const [members, setMembers] = useState<OrganizationMember[]>([]);
+  const [about, setAbout] = useState('');
   const [saved, setSaved] = useState(false);
+  const [ormawaPublish, setOrmawaPublish] = useState(true);
+  useEffect(() => { const savedPolicy=data.settings['organization.ormawa_self_publish']; if(typeof savedPolicy==='boolean') setOrmawaPublish(savedPolicy); }, [data.settings]);
+  useEffect(() => { if (storedMembers) setMembers(storedMembers); }, [JSON.stringify(storedMembers)]);
+  useEffect(() => { if (storedAbout?.description) setAbout(storedAbout.description); }, [storedAbout?.description]);
   const updateMember = (
     id: number,
     field: keyof OrganizationMember,
@@ -707,7 +679,12 @@ export function OrganizationAdmin() {
       <Title
         title="Periode, Struktur & ORMAWA"
         copy="Kelola halaman Tentang, struktur organisasi, periode, dan permintaan halaman ORMAWA tanpa coding."
+        onAction={() => void Promise.all([
+          runAction('setting.save', { namespace:'site', key:'about', value:{ description:about }, isPublic:true }, 'Konten organisasi berhasil disimpan.'),
+          runAction('setting.save', { namespace:'site', key:'organization_structure', value:members, isPublic:true }, 'Struktur organisasi berhasil disimpan.'),
+        ]).then(() => setSaved(true))}
       />
+      {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
       <div className="v5-admin-layout">
         <main>
           <section className="v4-panel v5-admin-form">
@@ -717,15 +694,15 @@ export function OrganizationAdmin() {
             </header>
             <label>
               Deskripsi DPM
-              <textarea defaultValue="DPM FIPP UNIMA adalah lembaga perwakilan mahasiswa tingkat fakultas yang menyalurkan aspirasi, menyusun kajian, menjalankan fungsi legislasi, dan mengawasi program kemahasiswaan." />
+              <textarea value={about} onChange={(event) => { setAbout(event.target.value); setSaved(false); }} />
             </label>
             <label>
               Periode Aktif
-              <select>
-                <option>2026–2027</option>
+              <select value={data.periods.find((item) => item.is_current)?.id ?? ''} disabled>
+                {data.periods.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
               </select>
             </label>
-            <button>
+            <button onClick={() => void runAction('setting.save', { namespace:'site', key:'about', value:{ description:about }, isPublic:true }, 'Konten Tentang berhasil disimpan.')}>
               <Save /> Simpan Konten Tentang
             </button>
           </section>
@@ -813,7 +790,7 @@ export function OrganizationAdmin() {
               <button
                 className="primary"
                 type="button"
-                onClick={() => setSaved(true)}
+                onClick={() => void runAction('setting.save', { namespace:'site', key:'organization_structure', value:members, isPublic:true }, 'Struktur organisasi berhasil disimpan.').then(() => setSaved(true))}
               >
                 <Save /> Simpan Struktur
               </button>
@@ -831,16 +808,17 @@ export function OrganizationAdmin() {
               </div>
             </header>
             <div className="v5-admin-list">
-              {['HIMAPSI', 'HIMAPEN', 'HMJ PGSD'].map((x, i) => (
-                <article key={x}>
+              {data.organizations.map((x) => (
+                <article key={x.id}>
                   <Building2 />
                   <span>
-                    <b>{x}</b>
-                    <small>{i ? 'Halaman aktif' : 'Menunggu approval'}</small>
+                    <b>{x.short_name ?? x.name}</b>
+                    <small>{x.status === 'active' ? 'Halaman aktif' : x.status}</small>
                   </span>
-                  <button>{i ? 'Kelola' : 'Setujui'}</button>
+                  <button onClick={() => location.assign(`/admin/cms?organization=${x.id}`)}>Kelola</button>
                 </article>
               ))}
+              {!data.organizations.length && <p className="v5-filter-empty">Belum ada ORMAWA pada database.</p>}
             </div>
           </section>
           <section className="v4-panel v5-admin-form">
@@ -858,7 +836,7 @@ export function OrganizationAdmin() {
               </select>
             </label>
             <label>
-              <input type="checkbox" defaultChecked /> ORMAWA dapat publish
+              <input type="checkbox" checked={ormawaPublish} onChange={(event) => { setOrmawaPublish(event.target.checked); void runAction('setting.save',{namespace:'organization',key:'ormawa_self_publish',value:event.target.checked,isPublic:false},'Kebijakan ORMAWA berhasil disimpan.'); }} /> ORMAWA dapat publish
               halaman sendiri setelah halaman disetujui
             </label>
           </section>
@@ -869,53 +847,44 @@ export function OrganizationAdmin() {
 }
 
 export function PermissionAdmin() {
-  const rows = [
-    'content.publish.all',
-    'ormawa.profile.edit.own',
-    'ormawa.profile.publish.own',
-    'ddas.update.assigned',
-    'comments.moderate.all',
-    'audit.read.all',
-  ];
+  const { data, loading, error, message, runAction, reload } = useAdminPortal();
+  const roleKeys = ['super_admin', 'chairperson', 'secretary', 'dpm_unit', 'ormawa'];
+  const roleNames = roleKeys.map((key) => data.roles.find((role) => role.key === key)?.name ?? key.replaceAll('_', ' '));
   return (
     <div className="v4-admin-content">
       <Title
         title="Permission"
         copy="Atur permission fleksibel untuk Super Admin, Chairperson, Secretary, Unit DPM, dan ORMAWA."
+        action="Muat Ulang"
+        onAction={() => void reload()}
       />
+      {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
       <section className="v4-panel v5-permission">
         <header>
           <div>
             <h2>Permission Matrix</h2>
             <p>Explicit deny selalu mengalahkan allow.</p>
           </div>
-          <button className="primary">
+          <button className="primary" onClick={() => location.assign('/admin/iam')}>
             <Plus /> Tambah Permission
           </button>
         </header>
         <div>
           <b>Permission</b>
-          {[
-            'Super Admin',
-            'Chairperson',
-            'Secretary',
-            'DPM Unit',
-            'ORMAWA',
-          ].map((x) => (
+          {roleNames.map((x) => (
             <b key={x}>{x}</b>
           ))}
-          {rows.flatMap((x, i) => [
-            <span key={x}>
+          {data.permissions.flatMap((permission) => [
+            <span key={permission.key} title={permission.description}>
               <LockKeyhole />
-              {x}
+              {permission.key}
             </span>,
-            ...[0, 1, 2, 3, 4].map((j) => (
-              <label key={x + j}>
+            ...roleKeys.map((roleKey) => (
+              <label key={permission.key + roleKey}>
                 <input
                   type="checkbox"
-                  defaultChecked={
-                    j === 0 || (i > 0 && j === 4 && i < 3) || (j < 3 && i < 5)
-                  }
+                  checked={Boolean(permission.roles?.[roleKey])}
+                  onChange={(event) => void runAction('permission.set', { permissionKey: permission.key, roleKey, allowed: event.target.checked }, 'Permission berhasil diperbarui.')}
                 />
               </label>
             )),
@@ -927,18 +896,28 @@ export function PermissionAdmin() {
 }
 
 export function AuditAdmin() {
+  const { data, loading, error } = useAdminPortal();
+  const [query, setQuery] = useState('');
+  const records = data.audit.filter((item) => `${item.actor_name ?? item.actor_type} ${item.action} ${item.target_type} ${item.result}`.toLowerCase().includes(query.toLowerCase()));
+  const exportAudit = () => {
+    const rows = [['Waktu','Aktor','Aksi','Target','Hasil','Alasan'], ...records.map((x) => [x.occurred_at,x.actor_name ?? x.actor_type,x.action,x.target_type,x.result,x.reason ?? ''])];
+    const blob = new Blob([rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"','""')}"`).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
+    const link = document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=`audit-${new Date().toISOString().slice(0,10)}.csv`; link.click(); URL.revokeObjectURL(link.href);
+  };
   return (
     <div className="v4-admin-content">
       <Title
         title="Audit Log"
         copy="Riwayat append-only untuk perubahan akses, publikasi, D-DAS, aset, dan struktur organisasi."
         action="Ekspor Audit"
+        onAction={exportAudit}
       />
+      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
       <div className="v4-admin-stats">
         <Metric
           icon={History}
           label="Event 24 Jam"
-          value="184"
+          value={String(data.audit.filter((x) => Date.now() - new Date(x.occurred_at).getTime() <= 86400000).length)}
           note="Semua layanan"
         />
         <Metric
@@ -950,7 +929,7 @@ export function AuditAdmin() {
         <Metric
           icon={LockKeyhole}
           label="Akses Ditolak"
-          value="7"
+          value={String(data.audit.filter((x) => x.result.toLowerCase().includes('den')).length)}
           note="Diblokir kebijakan"
         />
       </div>
@@ -962,39 +941,22 @@ export function AuditAdmin() {
           </div>
           <label className="v5-audit-search">
             <Search />
-            <input placeholder="Cari actor, aksi, atau target..." />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari actor, aksi, atau target..." />
           </label>
         </header>
         <div className="v5-audit-list">
-          {[
-            ['Super Admin', 'content.publish', 'Kajian MBKM', 'Berhasil'],
-            [
-              'ORMAWA · HIMAPSI',
-              'ormawa.profile.update',
-              'Halaman HIMAPSI',
-              'Berhasil',
-            ],
-            ['Chairperson', 'audit.read.all', 'Audit Log', 'Ditolak'],
-            [
-              'Secretary',
-              'organization.structure.update',
-              'Komisi II',
-              'Berhasil',
-            ],
-            ['D-DAS Coordinator', 'ddas.assign', 'DAS-2026-0005', 'Berhasil'],
-          ].map((x) => (
-            <article key={x.join()}>
-              <span className={x[3] === 'Ditolak' ? 'deny' : 'ok'}>{x[3]}</span>
+          {records.map((x) => (
+            <article key={x.id}>
+              <span className={x.result.toLowerCase().includes('den') ? 'deny' : 'ok'}>{x.result}</span>
               <div>
-                <b>{x[1]}</b>
-                <small>
-                  {x[0]} · {x[2]}
-                </small>
+                <b>{x.action}</b>
+                <small>{x.actor_name ?? x.actor_type} · {x.target_type}</small>
               </div>
-              <time>20 Mei 2026 · 10:23</time>
-              <button>Detail</button>
+              <time>{new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(x.occurred_at))}</time>
+              <button onClick={() => alert(x.reason || 'Tidak ada detail tambahan yang aman ditampilkan.')}>Detail</button>
             </article>
           ))}
+          {!records.length && <p className="v5-filter-empty">Tidak ada event audit yang sesuai.</p>}
         </div>
       </section>
     </div>
