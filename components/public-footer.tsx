@@ -6,9 +6,6 @@ export function PublicFooter() {
     <footer>
       <div className="shell footer-grid">
         <div><div className="brand light-brand">
-          <span className="brand-mark">
-            <Landmark size={23} />
-            </span>
             <span>
               <strong>DPM FIPP</strong>
               <small>UNIVERSITAS NEGERI MANADO</small>
