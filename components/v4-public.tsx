@@ -240,10 +240,7 @@ export function V4About() {
       <section className="v5-shell v5-org">
         <header>
           <h2>Struktur Organisasi DPM FIPP UNIMA</h2>
-          <p>
-            Struktur ini dikelola per periode melalui Portal Admin sehingga
-            perubahan jabatan dan unit tidak memerlukan perubahan kode.
-          </p>
+          
         </header>
         <div className="v6-org-people">
           {organizationMembers.map((person, index) => (
@@ -262,9 +259,7 @@ export function V4About() {
             <span>ORMAWA FIPP</span>
             <h2>Kenali organisasi mahasiswa di lingkungan FIPP.</h2>
             <p>
-              Setiap ORMAWA memiliki halaman perkenalan, galeri, informasi
-              organisasi, dan daftar program kerja yang dikelola oleh
-              pengurusnya.
+              
             </p>
             <Link href="/ormawa">
               Lihat Daftar ORMAWA <ArrowRight />
