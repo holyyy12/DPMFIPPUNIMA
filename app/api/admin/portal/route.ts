@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { verifyAdminSession } from '@/lib/supabase/auth';
-import { supabaseRpc } from '@/lib/supabase/rest';
+import { supabaseConfig, supabaseRpc } from '@/lib/supabase/rest';
 
 const actionSchema = z.object({
   action: z.enum([
@@ -46,6 +46,14 @@ export async function POST(request: Request) {
     const session = await adminSession();
     if (!session) return Response.json({ ok: false, message: 'Sesi admin dan MFA diperlukan.' }, { status: 403 });
     const input = actionSchema.parse(await request.json());
+    if (input.action === 'user.invite_request') {
+      const parsed = z.object({ displayName: z.string().trim().min(1).max(120), email: z.string().trim().email().max(254), roleKey: z.string().min(1), unitId: z.union([z.string().uuid(), z.literal('')]).default('') }).safeParse(input.payload);
+      if (!parsed.success) return Response.json({ok:false,message:'Nama, email, role, dan unit harus diisi dengan benar.'},{status:400});
+      const {url,anon}=supabaseConfig();
+      const response=await fetch(`${url}/functions/v1/invite-admin`,{method:'POST',headers:{apikey:anon,Authorization:`Bearer ${session.token}`,'Content-Type':'application/json'},body:JSON.stringify(parsed.data),cache:'no-store'});
+      const result=await response.json() as {ok?:boolean;message?:string};
+      return Response.json({ok:response.ok&&result.ok===true,message:result.message??'Layanan undangan belum tersedia.'},{status:response.ok?200:response.status});
+    }
     if (input.action === 'unit.save') {
       const payload = input.payload;
       const data = await supabaseRpc<{ ok: boolean; id?: string; error?: string }>('create_admin_unit', {

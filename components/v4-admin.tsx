@@ -1,4 +1,7 @@
 'use client';
+import {uploadFiles} from './admin-rework';
+import {ContentGallery} from './content-gallery';
+import type {ContentMedia} from '@/lib/content-media';
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -215,7 +218,11 @@ export function CmsEditorV4() {
   const [bodyText, setBodyText] = useState('');
   const [contentTypeId, setContentTypeId] = useState('');
   const [language, setLanguage] = useState('id');
-  const [fileName, setFileName] = useState('Belum ada media dipilih');
+  const [files,setFiles]=useState<File[]>([]);
+  const [attachments,setAttachments]=useState<ContentMedia[]>([]);
+  const [mediaBusy,setMediaBusy]=useState(false);
+  const [mediaError,setMediaError]=useState('');
+  const fileName=files.length?files.map(f=>f.name).join(', '):'Belum ada media dipilih';
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const wanted = params.get('id');
@@ -229,12 +236,15 @@ export function CmsEditorV4() {
   useEffect(() => {
     if (!selected) return;
     setTitle(selected.title); setSlug(selected.slug); setSummary(selected.summary); setContentTypeId(selected.content_type_id ?? '');
-    setBodyText(typeof selected.body === 'string' ? selected.body : JSON.stringify(selected.body));
+    const saved=selected.body as {blocks?:{text?:string}[];attachments?:Array<ContentMedia & {publicUrl?:string}>};
+    setBodyText(typeof selected.body==='string'?selected.body:(saved.blocks??[]).map(b=>b.text??'').join('\n\n'));
+    setAttachments((saved.attachments??[]).map(m=>({...m,url:m.url??m.publicUrl??''})));setFiles([]);
   }, [selected?.id]);
-  const save = (status: 'draft' | 'scheduled' | 'published') => {
+  const save = async (status: 'draft' | 'scheduled' | 'published') => {
     if (!title.trim() || !slug.trim()) return alert('Judul dan slug wajib diisi.');
     if (!contentTypeId) return alert('Tipe konten wajib dipilih.');
-    return runAction('content.save', { id: selected?.id ?? '', title: title.trim(), slug: slug.trim(), summary: summary.trim(), body: { schemaVersion: 1, blocks: [{ type: 'paragraph', text: bodyText }] }, status, contentTypeId, unitId: selected?.unit_id ?? data.units[0]?.id ?? '', language, visibility: 'public' }, status === 'published' ? 'Konten berhasil dipublikasikan.' : status === 'scheduled' ? 'Konten berhasil dijadwalkan.' : 'Draft berhasil disimpan.');
+    setMediaBusy(true);setMediaError('');try{const uploaded=await uploadFiles(files,'public-media',8-attachments.length,20*1024*1024);const all=[...attachments,...uploaded.map(m=>({url:m.publicUrl,name:m.name,mimeType:m.mimeType}))];setAttachments(all);setFiles([]);
+    await runAction('content.save', { id: selected?.id ?? '', title: title.trim(), slug: slug.trim(), summary: summary.trim(), body: { schemaVersion: 1, blocks: [{ type: 'paragraph', text: bodyText }], attachments:all.map(m=>({...m,publicUrl:m.url})) }, status, contentTypeId, unitId: selected?.unit_id ?? data.units[0]?.id ?? '', language, visibility: 'public' }, status === 'published' ? 'Konten berhasil dipublikasikan.' : status === 'scheduled' ? 'Konten berhasil dijadwalkan.' : 'Draft berhasil disimpan.');}catch(e){setMediaError(e instanceof Error?e.message:'Media belum tersimpan.')}finally{setMediaBusy(false)}
   };
   const exportContent = () => { const blob=new Blob([JSON.stringify({ title,slug,summary,body:bodyText },null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${slug || 'konten'}.json`;a.click();URL.revokeObjectURL(a.href); };
   return (
@@ -244,7 +254,7 @@ export function CmsEditorV4() {
         copy="Kelola konten Berita, Kajian, Publikasi, Media, Program Kerja, dan lainnya tanpa coding."
         actions={
           <>
-            <button onClick={() => void save('draft')}>
+            <button disabled={mediaBusy} onClick={() => void save('draft')}>
               <Save /> Simpan Draft
             </button>
             <button onClick={() => {
@@ -253,10 +263,10 @@ export function CmsEditorV4() {
               const href = key === 'program' ? `/program/${selected.slug}` : key === 'd-trace' ? '/d-trace' : key === 'd-dar' ? '/d-dar' : `/berita/${selected.slug}`;
               window.open(href, '_blank', 'noopener,noreferrer');
             }}>◉ Preview</button>
-            <button onClick={() => void save('scheduled')}>
+            <button disabled={mediaBusy} onClick={() => void save('scheduled')}>
               <CalendarDays /> Jadwalkan
             </button>
-            <button className="primary" onClick={() => void save('published')}>Publikasikan⌄</button>
+            <button className="primary" disabled={mediaBusy} onClick={() => void save('published')}>Publikasikan⌄</button>
           </>
         }
       />
@@ -324,13 +334,13 @@ export function CmsEditorV4() {
           </label>
         </section>
         <section className="v4-panel v4-media-editor">
-          <h2>Media</h2>
+          <h2>Media</h2>{mediaError&&<p role="alert">{mediaError}</p>}<ContentGallery items={attachments}/>
           <label>Gambar Unggulan (Featured Image)</label>
           <div className="v4-featured">
             <Image />
             <span>
               {fileName}
-              <small>{fileName === 'Belum ada media dipilih' ? 'Pilih media dari perangkat Anda.' : 'Media dipilih dan siap diunggah melalui pustaka Media.'}</small>
+              <small>{fileName === 'Belum ada media dipilih' ? 'Pilih media dari perangkat Anda.' : 'Media akan diunggah saat konten disimpan.'}</small>
             </span>
           </div>
           <h3>Gambar Dalam Konten / Galeri</h3>
@@ -340,9 +350,9 @@ export function CmsEditorV4() {
             ))}
             {!data.media.length && <small>Belum ada media pada database.</small>}
           </div>
-          <input id="cms-media-file" type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" hidden onChange={(event) => setFileName(event.target.files?.[0]?.name ?? 'Belum ada media dipilih')} />
+          <input id="cms-media-file" type="file" accept="image/*,video/*" multiple hidden onChange={(event) => setFiles(Array.from(event.target.files??[]))} />
           <button onClick={() => document.getElementById('cms-media-file')?.click()}>
-            <Upload /> Tambah Gambar
+            <Upload /> Tambah Gambar / Video
           </button>
           <label>
             Alt Text

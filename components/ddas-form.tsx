@@ -11,13 +11,14 @@ export function DdasForm() {
   const [copied, setCopied] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const [uploadMessage,setUploadMessage]=useState('');
 
   if (receipt) {
     const text = `Nomor tiket: ${receipt.ticket}\nKode pelacakan: ${receipt.secret}`;
     return (
       <section className="receipt-card" aria-live="polite">
         <span className="success-icon"><Check /></span>
-        <p className="form-eyebrow">ASPIRASI TERSIMPAN</p>
+        <p className="form-eyebrow">ASPIRASI TERSIMPAN</p>{uploadMessage&&<p role="status">{uploadMessage}</p>}
         <h1>Terima kasih sudah bersuara.</h1>
         <p>Aspirasi Anda sudah tersimpan secara durable. Simpan kedua kode di bawah ini—kode pelacakan hanya ditampilkan pada receipt ini.</p>
         <div className="credential-box"><small>NOMOR TIKET</small><strong>{receipt.ticket}</strong><small>KODE PELACAKAN PRIVAT</small><strong>{receipt.secret}</strong></div>
@@ -36,10 +37,15 @@ export function DdasForm() {
       const form = event.currentTarget;
       const data = new FormData(form);
       try {
-        const files=Array.from((form.elements.namedItem('attachments') as HTMLInputElement)?.files??[]).map(file=>({name:file.name,type:file.type,size:file.size}));
+        const selectedFiles=Array.from((form.elements.namedItem('attachments') as HTMLInputElement)?.files??[]);
+        if(selectedFiles.length>8||selectedFiles.some(f=>f.size>25_000_000))throw Error('Maksimal 8 file, 25 MB per file.');
+        const files=selectedFiles.map(file=>({name:file.name,type:file.type,size:file.size}));
         const response = await fetch('/api/ddas/submit', { method:'POST', headers:{'Content-Type':'application/json'}, cache:'no-store', body:JSON.stringify({ category:data.get('category'), subject:data.get('subject'), body:data.get('body'), email:data.get('email'), whatsapp:data.get('whatsapp'), submissionMode:data.get('submissionMode'), anonymityReason:data.get('anonymityReason'), attachments:files, consent:data.get('consent')==='on', notificationOptIn:data.get('notificationOptIn')==='on', website:data.get('website'), idempotencyKey:crypto.randomUUID() }) });
         const result = await response.json() as ApiResult;
         if (!response.ok || !result.ok || !result.data) throw new Error(result.message ?? 'Aspirasi belum dapat dikirim.');
+        let uploaded=0; const failed:string[]=[];
+        for(const file of selectedFiles){try{const prepared=await fetch('/api/ddas/attachments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result.data,name:file.name,type:file.type,size:file.size})});const p=await prepared.json() as {ok:boolean;url:string;key:string};if(!prepared.ok||!p.ok)throw Error('prepare');const upload=await fetch(p.url,{method:'POST',headers:{apikey:p.key,Authorization:`Bearer ${p.key}`,'Content-Type':file.type||'application/octet-stream','x-upsert':'false'},body:file});if(!upload.ok)throw Error('upload');uploaded++;}catch{failed.push(file.name)}}
+        setUploadMessage(failed.length?`Aspirasi tersimpan, tetapi ${failed.length} lampiran gagal diunggah: ${failed.join(', ')}. Simpan bukti pengiriman dan hubungi DPM untuk mengirim ulang berkas.`:uploaded?`${uploaded} lampiran berhasil diunggah secara privat.`:'');
         setReceipt(result.data); window.dispatchEvent(new CustomEvent('ddas:submitted',{detail:result.data})); window.scrollTo({ top:0, behavior:'smooth' });
       } catch (reason) { setError(reason instanceof Error ? reason.message : 'Aspirasi belum dapat dikirim.'); }
       finally { setPending(false); }
@@ -54,8 +60,8 @@ export function DdasForm() {
         <label htmlFor="attachments">Lampiran pendukung (opsional)</label><input id="attachments" name="attachments" type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"/><p className="form-help">Maksimal 8 file, 25 MB per file. Mendukung foto, dokumen, video, dan audio.</p>
       </div>
       <div className="form-section"><p className="form-eyebrow">02 · KONTAK OPSIONAL</p><h2>Perlu kami hubungi?</h2><p className="form-help">Kontak disimpan terenkripsi dan terpisah dari isi aspirasi. Kontak tidak pernah tampil di halaman publik.</p>
-        <label htmlFor="email">Email (opsional)</label><input id="email" name="email" type="email" maxLength={254} placeholder="nama@student.unima.ac.id" />
-        <label htmlFor="whatsapp">Nomor WhatsApp (opsional)</label><input id="whatsapp" name="whatsapp" inputMode="tel" maxLength={20} placeholder="Contoh: +62 812 3456 7890" />
+        <label htmlFor="email">Email (opsional)</label><input id="email" name="email" type="email" autoComplete="email" maxLength={254} placeholder="nama@student.unima.ac.id" />
+        <label htmlFor="whatsapp">Nomor WhatsApp (opsional)</label><input id="whatsapp" name="whatsapp" type="tel" autoComplete="tel" inputMode="tel" maxLength={30} placeholder="Contoh: +62 812 3456 7890" />
         <label className="consent-row compact"><input type="checkbox" name="notificationOptIn" /><span>Saya ingin menerima notifikasi penerimaan melalui email.</span></label>
       </div>
       <div className="honeypot" aria-hidden="true"><label htmlFor="website">Website</label><input id="website" name="website" tabIndex={-1} autoComplete="off" /></div>

@@ -1,6 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { ContentGallery } from './content-gallery';
+import { contentMedia } from '@/lib/content-media';
+import { PublicSurveys } from './public-surveys';
 import { useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, BarChart3, CheckCircle2, Download, FileArchive, FileText, Images, Play, Search, Vote } from 'lucide-react';
 import { PublicFrame } from './v4-public';
@@ -38,17 +41,17 @@ export function ProgramDetailPage({ slug }: { slug: string }) {
   const program = programs.find((item) => item.slug === slug);
   if (loading) return <PublicFrame><section className="v5-shell v5-program-detail"><p>Memuat program…</p></section></PublicFrame>;
   if (!program) return <PublicFrame><section className="v5-shell v5-program-detail"><Link href="/program"><ArrowLeft /> Semua Program</Link><h1>Program tidak ditemukan</h1><p>Program ini belum diterbitkan melalui Portal Admin.</p></section></PublicFrame>;
-  return <PublicFrame><section className="v5-shell v5-program-detail"><Link href="/program"><ArrowLeft /> Semua Program</Link><div className="v5-program-detail-hero" style={{ backgroundImage: `linear-gradient(90deg,#043d30dd,#043d3040),url(${program.image})` }}><span>{program.media === 'video' ? <Play /> : <Images />}{program.unit}</span><h1>{program.title}</h1><p>{program.copy}</p></div><div className="v5-program-detail-grid"><article><h2>Publikasi Program</h2><p>{program.updateNote}</p><div className="v5-inline-gallery">{programs.map((item) => <span key={item.id} style={{ backgroundImage: `url(${item.image})` }} />)}</div></article><aside><h2>Progres</h2><strong>{program.progress}%</strong><i><em style={{ width: `${program.progress}%` }} /></i><p><CheckCircle2 /> Indikator keberhasilan: <b>{program.success}%</b></p><p><CheckCircle2 /> Pembaruan terakhir: {formatPublicDate(program.progress_updated_at ?? program.updated_at)}</p></aside></div></section></PublicFrame>;
+  return <PublicFrame><section className="v5-shell v5-program-detail"><Link href="/program"><ArrowLeft /> Semua Program</Link><div className="v5-program-detail-hero" style={{ backgroundImage: `linear-gradient(90deg,#043d30dd,#043d3040),url(${program.image})` }}><span>{program.media === 'video' ? <Play /> : <Images />}{program.unit}</span><h1>{program.title}</h1><p>{program.copy}</p></div><div className="v5-program-detail-grid"><article><h2>Publikasi Program</h2><p>{program.updateNote}</p><ContentGallery items={contentMedia(program)}/></article><aside><h2>Progres</h2><strong>{program.progress}%</strong><i><em style={{ width: `${program.progress}%` }} /></i><p><CheckCircle2 /> Indikator keberhasilan: <b>{program.success}%</b></p><p><CheckCircle2 /> Pembaruan terakhir: {formatPublicDate(program.progress_updated_at ?? program.updated_at)}</p></aside></div></section></PublicFrame>;
 }
 
 export function SightPage() {
   const { data, loading } = usePublicPortal();
-  const [selectedIssue, setSelectedIssue] = useState('');
+
   const studies = data.contents.filter((item) => item.content_type === 'd-sight');
   const news = data.contents.filter((item) => item.content_type === 'berita');
   return <PublicFrame><Hero eyebrow="D-SIGHT" title="Kajian, survei, dan berita berbasis isu mahasiswa." copy="D-SIGHT membantu mahasiswa memahami isu melalui kajian, hasil survei, dan berita yang relevan." /><section className="v5-shell v5-domain-tabs"><a href="#kajian">Kajian</a><a href="#survei">Survei</a><a href="#berita">Berita</a></section>
     <section className="v5-shell v5-domain-section" id="kajian"><header><span><BarChart3 /></span><div><h2>Kajian Terbaru</h2><p>Analisis dan rekomendasi kebijakan berbasis data.</p></div></header><div className="v5-study-cards">{studies.map((item) => <article key={item.id}><span>{categoryOf(item, 'Kajian')}</span><h3>{item.title}</h3><p>Diterbitkan {formatPublicDate(item.published_at)}</p><Link href={`/berita/${item.slug}`}>Baca Kajian <ArrowRight /></Link></article>)}</div>{!loading && !studies.length && <p className="v5-filter-empty">Belum ada kajian yang dipublikasikan.</p>}</section>
-    <section className="v5-shell v5-domain-section" id="survei"><header><span><Vote /></span><div><h2>Survei & Hasil Sementara</h2><p>Pilih isu dan lihat jumlah respons tanpa data pribadi responden.</p></div></header><div className="v5-survey-grid">{data.surveys.map((survey) => <article key={survey.id}><h3>{survey.title}</h3><strong>{survey.responseCount}</strong><p>respons masuk</p><button type="button" className={selectedIssue === survey.id ? 'selected' : ''} onClick={() => setSelectedIssue(survey.id)}>{selectedIssue === survey.id ? 'Isu Dipilih' : 'Pilih Isu'}</button></article>)}</div>{!loading && !data.surveys.length && <p className="v5-filter-empty">Belum ada survei publik yang aktif.</p>}</section>
+    <section className="v5-shell v5-domain-section" id="survei"><header><span><Vote /></span><div><h2>Survei & Hasil Sementara</h2><p>Pilih isu dan lihat jumlah respons tanpa data pribadi responden.</p></div></header><PublicSurveys/></section>
     <section className="v5-shell v5-domain-section" id="berita"><header><span><FileText /></span><div><h2>Berita D-SIGHT</h2><p>Perkembangan isu, dialog, dan publikasi kajian.</p></div></header><div className="v5-news-grid">{news.map((item) => <Link href={`/berita/${item.slug}`} key={item.id}><img src={publicAssetUrl(item)} alt="" /><span><b>{item.title}</b><small>{formatPublicDate(item.published_at)}</small></span></Link>)}</div>{!loading && !news.length && <p className="v5-filter-empty">Belum ada berita yang dipublikasikan.</p>}</section>
   </PublicFrame>;
 }

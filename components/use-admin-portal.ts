@@ -40,7 +40,7 @@ export function useAdminPortal() {
       setError(detail);
       throw new Error(detail);
     }
-    setMessage(success);
+    setMessage(body.message || success);
     await reload();
   }, [reload]);
 

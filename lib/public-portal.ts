@@ -18,6 +18,8 @@ export type PublicPortalSnapshot = {
 export const emptyPublicPortal:PublicPortalSnapshot={period:{},settings:{},contents:[],ddas:{total:0,inProgress:0,followedUp:0,completed:0},surveys:[],organizations:[]};
 
 export function publicAssetUrl(item:PublicContent){
+  const attached=(item.body as {attachments?:Array<{publicUrl?:string}>}|undefined)?.attachments?.[0]?.publicUrl;
+  if(attached?.startsWith('https://'))return attached;
   const direct=(item.seo as {program?:{image?:string}}|undefined)?.program?.image;
   if(direct)return direct;
   if(!item.featured_object_path)return '/fipp-campus-hero.png';

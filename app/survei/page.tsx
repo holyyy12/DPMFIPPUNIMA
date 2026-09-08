@@ -1,3 +1,3 @@
-import { PublicDirectoryPage } from '@/components/public-directory-page';
-const items=[{label:'BELUM DIBUKA',title:'Survei layanan akademik',description:'Periode survei berikutnya akan diumumkan setelah consent text dan pemilik data disetujui.',href:'/kebijakan/privasi'},{label:'ARSIP',title:'Hasil survei terpublikasi',description:'Hanya hasil yang telah melalui review privasi dapat ditampilkan.',href:'/transparansi'},{label:'ASPIRASI',title:'Butuh menyampaikan hal sekarang?',description:'Gunakan D-DAS untuk aspirasi yang membutuhkan tiket dan tindak lanjut privat.',href:'/ddas/kirim'}];
-export default function Page(){return <PublicDirectoryPage eyebrow="SURVEI MAHASISWA" title="Partisipasi yang jelas tujuannya." description="Setiap survei memiliki periode, tujuan, consent, pengelola, dan aturan publikasi hasil." items={items}/>}
+import {PublicFrame} from '@/components/v4-public';
+import {PublicSurveys} from '@/components/public-surveys';
+export default function Page(){return <PublicFrame><section className="v5-shell v5-domain-section"><h1>Pilih Isu Mahasiswa</h1><p>Sampaikan pilihan Anda melalui survei yang sedang dibuka.</p><PublicSurveys/></section></PublicFrame>}

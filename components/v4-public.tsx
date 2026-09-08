@@ -18,6 +18,8 @@ import {
 import { PublicHeader } from './public-header';
 import { PublicFooter } from './public-footer';
 import { PublicComments } from './public-comments';
+import { ContentGallery } from './content-gallery';
+import { contentMedia } from '@/lib/content-media';
 import { DdasWorkspace } from './ddas-workspace';
 import { usePublicPortal } from './use-public-portal';
 import { formatPublicDate, publicAssetUrl } from '@/lib/public-portal';
@@ -79,7 +81,7 @@ export function V4Home() {
           </div>
         </div>
       </section>
-      {(loading||error)&&<p className="v5-shell v5-filter-empty">{loading?'Memuat data publik…':error}</p>}
+      {(loading||error)&&<p className="v5-shell v5-filter-empty">{loading?'Jaringanmu Lamban, Tunggu Sebentar...':error}</p>}
       <section className="v5-shell v5-home-cards">
         <article>
           <header>
@@ -408,7 +410,7 @@ export function V4PublicationDetail({slug}:{slug:string}) {
           <h1>{article?.title??(loading?'Memuat publikasi…':'Publikasi tidak ditemukan')}</h1>
           <small>DPM FIPP UNIMA · {formatPublicDate(article?.published_at??article?.updated_at)}</small>
           <p>{article?.summary??error??'Konten ini belum tersedia pada database.'}</p>
-          {article&&<PublicComments slug={article.slug} />}
+          {article&&<>{((article.body as {blocks?:{text?:string}[]})?.blocks??[]).filter(b=>b.text&&b.text!==article.summary).map((b,i)=><p key={i} style={{whiteSpace:'pre-wrap'}}>{b.text}</p>)}<ContentGallery items={contentMedia(article)}/><PublicComments slug={article.slug} /></>}
         </article>
         <aside>
           <h3>Berita Terkait</h3>

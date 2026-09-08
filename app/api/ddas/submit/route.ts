@@ -1,6 +1,7 @@
 import { ddasSubmissionSchema } from '@/lib/contracts/ddas';
 import { deriveReceipt, encrypt, hmac } from '@/lib/security/crypto';
 import { supabaseRpc } from '@/lib/supabase/rest';
+import { z } from 'zod';
 
 const jsonHeaders = { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex, nofollow' };
 
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
     }, { noStore:true });
     return Response.json({ ok:true, data:receipt, requestId }, { status:201, headers:jsonHeaders });
   } catch (error) {
+    if(error instanceof z.ZodError){const labels:Record<string,string>={email:'Email',whatsapp:'Nomor WhatsApp',subject:'Judul',body:'Isi aspirasi',consent:'Persetujuan',attachments:'Lampiran'};const field=String(error.issues[0]?.path[0]??'');return Response.json({ok:false,message:`${labels[field]??'Isian'} belum valid. Kontak boleh dikosongkan; jika diisi, gunakan email lengkap atau nomor WhatsApp 8–15 digit.`,requestId},{status:400,headers:jsonHeaders});}
     const unavailable = error instanceof Error && error.message.includes('BACKEND_NOT_CONFIGURED');
     return Response.json({ ok:false, code:unavailable?'SERVICE_UNAVAILABLE':'INVALID_REQUEST', message:unavailable?'Layanan aspirasi belum diaktifkan pada backend greenfield baru. Coba kembali setelah konfigurasi selesai.':'Periksa kembali isian Anda tanpa memasukkan data rahasia yang tidak diperlukan.', requestId }, { status:unavailable?503:400, headers:jsonHeaders });
   }

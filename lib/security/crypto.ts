@@ -21,7 +21,8 @@ export async function deriveReceipt(idempotencyKey: string, pepper: string) {
   const ticketMaterial = await hmac(`ticket:${idempotencyKey}`, pepper);
   const secret = await hmac(`tracking:${idempotencyKey}`, pepper);
   const year = new Date().getUTCFullYear();
-  return { ticket: `D-DAS-${year}-${ticketMaterial.slice(0, 24).toUpperCase()}`, secret };
+  const ticketId=Array.from(fromBase64(ticketMaterial).slice(0,16),byte=>byte.toString(16).padStart(2,'0')).join('').toUpperCase();
+  return { ticket: `D-DAS-${year}-${ticketId}`, secret };
 }
 
 export async function encrypt(value: string, encodedKey: string) {
@@ -31,4 +32,10 @@ export async function encrypt(value: string, encodedKey: string) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const cipher = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(value)));
   return `v1.${toBase64Url(iv)}.${toBase64Url(cipher)}`;
+}
+
+export async function decrypt(value:string,encodedKey:string){
+ const [version,iv,cipher]=value.split('.');if(version!=='v1'||!iv||!cipher)throw Error('INVALID_CIPHERTEXT');
+ const key=await crypto.subtle.importKey('raw',fromBase64(encodedKey),'AES-GCM',false,['decrypt']);
+ return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:fromBase64(iv)},key,fromBase64(cipher)));
 }

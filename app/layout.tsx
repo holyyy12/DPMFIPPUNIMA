@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Manrope } from 'next/font/google';
 import './globals.css';
+import './feature-repairs.css';
 import { supabaseRpc } from '@/lib/supabase/rest';
 
 const geist = Geist({ variable: '--font-body', subsets: ['latin'] });
