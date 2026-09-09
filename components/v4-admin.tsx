@@ -1,7 +1,7 @@
 'use client';
-import {uploadFiles} from './admin-rework';
-import {ContentGallery} from './content-gallery';
-import type {ContentMedia} from '@/lib/content-media';
+import { EditableMedia } from './editable-media';
+import { uploadFiles } from './admin-rework';
+import type { ContentMedia } from '@/lib/content-media';
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -58,22 +58,56 @@ export function AdminDashboardV4() {
   const [dashboardUnit, setDashboardUnit] = useState('Semua');
   const [dashboardPeriod, setDashboardPeriod] = useState('Semua');
   const currentPeriod = data.periods.find((item) => item.is_current);
-  const statusLabel: Record<string, string> = { received: 'Masuk', triaged: 'Ditinjau', assigned: 'Diteruskan', in_progress: 'Ditindaklanjuti', waiting_for_information: 'Ditindaklanjuti', resolved: 'Selesai', closed: 'Selesai', rejected_out_of_scope: 'Selesai', reopened: 'Masuk' };
+  const statusLabel: Record<string, string> = {
+    received: 'Masuk',
+    triaged: 'Ditinjau',
+    assigned: 'Diteruskan',
+    in_progress: 'Ditindaklanjuti',
+    waiting_for_information: 'Ditindaklanjuti',
+    resolved: 'Selesai',
+    closed: 'Selesai',
+    rejected_out_of_scope: 'Selesai',
+    reopened: 'Masuk',
+  };
   const liveCases = data.ddasCases.map((item) => [
     item.ticket_public_id,
     item.subject,
     item.priority,
     statusLabel[item.status] ?? item.status,
     item.assigned_unit ?? 'Belum ditugaskan',
-    new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.submitted_at)),
+    new Intl.DateTimeFormat('id-ID', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(item.submitted_at)),
   ]);
   const liveStats = [
     ['Periode Aktif', currentPeriod?.name ?? 'Belum diatur', 'Tahun Akademik'],
-    ['Organisasi Aktif', String(data.organizations.filter((x) => x.status === 'active').length), 'Organisasi terdaftar'],
+    [
+      'Organisasi Aktif',
+      String(data.organizations.filter((x) => x.status === 'active').length),
+      'Organisasi terdaftar',
+    ],
     ['Total Aspirasi', String(data.ddasCases.length), 'Data Supabase'],
-    ['Publikasi Aktif', String(data.contents.filter((x) => x.status === 'published').length), 'Berita & informasi'],
-    ['Pengguna', String(data.users.filter((x) => x.status === 'active').length), 'Pengguna aktif'],
-    ['Komentar Hari Ini', String(data.comments.filter((x) => new Date(x.created_at).toDateString() === new Date().toDateString()).length), 'Komentar baru'],
+    [
+      'Publikasi Aktif',
+      String(data.contents.filter((x) => x.status === 'published').length),
+      'Berita & informasi',
+    ],
+    [
+      'Pengguna',
+      String(data.users.filter((x) => x.status === 'active').length),
+      'Pengguna aktif',
+    ],
+    [
+      'Komentar Hari Ini',
+      String(
+        data.comments.filter(
+          (x) =>
+            new Date(x.created_at).toDateString() === new Date().toDateString(),
+        ).length,
+      ),
+      'Komentar baru',
+    ],
   ];
   const dashboardCases = useMemo(
     () =>
@@ -91,14 +125,20 @@ export function AdminDashboardV4() {
     'Ditindaklanjuti',
     'Selesai',
   ];
-  const dashboardDates = [...new Set(liveCases.map((item) => item[5].split(',')[0]))];
+  const dashboardDates = [
+    ...new Set(liveCases.map((item) => item[5].split(',')[0])),
+  ];
   return (
     <div className="v4-admin-content">
       <PageTitle
         title="Dashboard"
         copy="Kelola dan pantau aktivitas DPM FIPP UNIMA secara menyeluruh."
       />
-      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
+      {(loading || error) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error}
+        </p>
+      )}
       <div className="v4-admin-stats">
         {liveStats.map(([a, b, c], i) => (
           <article key={a}>
@@ -145,7 +185,11 @@ export function AdminDashboardV4() {
             aria-label="Saring tanggal aspirasi"
           >
             <option value="Semua">Semua Tanggal</option>
-            {dashboardDates.map((date) => <option value={date} key={date}>{date}</option>)}
+            {dashboardDates.map((date) => (
+              <option value={date} key={date}>
+                {date}
+              </option>
+            ))}
           </select>
         </header>
         <div>
@@ -216,37 +260,124 @@ export function CmsEditorV4() {
   const [slug, setSlug] = useState('');
   const [summary, setSummary] = useState('');
   const [bodyText, setBodyText] = useState('');
+  const [bodyEdited, setBodyEdited] = useState(false);
   const [contentTypeId, setContentTypeId] = useState('');
   const [language, setLanguage] = useState('id');
-  const [files,setFiles]=useState<File[]>([]);
-  const [attachments,setAttachments]=useState<ContentMedia[]>([]);
-  const [mediaBusy,setMediaBusy]=useState(false);
-  const [mediaError,setMediaError]=useState('');
-  const fileName=files.length?files.map(f=>f.name).join(', '):'Belum ada media dipilih';
+  const [files, setFiles] = useState<File[]>([]);
+  const [attachments, setAttachments] = useState<ContentMedia[]>([]);
+  const [mediaBusy, setMediaBusy] = useState(false);
+  const [mediaError, setMediaError] = useState('');
+  const fileName = files.length
+    ? files.map((f) => f.name).join(', ')
+    : 'Belum ada media dipilih';
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const wanted = params.get('id');
     const requestedType = params.get('type');
     if (wanted) setSelectedId(wanted);
     if (!wanted && requestedType) {
-      const match = data.contentTypes.find((item) => item.key === requestedType);
+      const match = data.contentTypes.find(
+        (item) => item.key === requestedType,
+      );
       if (match) setContentTypeId(match.id);
     }
   }, [data.contentTypes]);
   useEffect(() => {
     if (!selected) return;
-    setTitle(selected.title); setSlug(selected.slug); setSummary(selected.summary); setContentTypeId(selected.content_type_id ?? '');
-    const saved=selected.body as {blocks?:{text?:string}[];attachments?:Array<ContentMedia & {publicUrl?:string}>};
-    setBodyText(typeof selected.body==='string'?selected.body:(saved.blocks??[]).map(b=>b.text??'').join('\n\n'));
-    setAttachments((saved.attachments??[]).map(m=>({...m,url:m.url??m.publicUrl??''})));setFiles([]);
+    setBodyEdited(false);
+    setTitle(selected.title);
+    setSlug(selected.slug);
+    setSummary(selected.summary);
+    setContentTypeId(selected.content_type_id ?? '');
+    const saved = selected.body as {
+      blocks?: { text?: string }[];
+      attachments?: Array<ContentMedia & { publicUrl?: string }>;
+    };
+    setBodyText(
+      typeof selected.body === 'string'
+        ? selected.body
+        : (saved.blocks ?? []).map((b) => b.text ?? '').join('\n\n'),
+    );
+    setAttachments(
+      (saved.attachments ?? []).map((m) => ({
+        ...m,
+        url: m.url ?? m.publicUrl ?? '',
+      })),
+    );
+    setFiles([]);
   }, [selected?.id]);
   const save = async (status: 'draft' | 'scheduled' | 'published') => {
-    if (!title.trim() || !slug.trim()) return alert('Judul dan slug wajib diisi.');
+    if (!title.trim() || !slug.trim())
+      return alert('Judul dan slug wajib diisi.');
     if (!contentTypeId) return alert('Tipe konten wajib dipilih.');
-    setMediaBusy(true);setMediaError('');try{const uploaded=await uploadFiles(files,'public-media',8-attachments.length,20*1024*1024);const all=[...attachments,...uploaded.map(m=>({url:m.publicUrl,name:m.name,mimeType:m.mimeType}))];setAttachments(all);setFiles([]);
-    await runAction('content.save', { id: selected?.id ?? '', title: title.trim(), slug: slug.trim(), summary: summary.trim(), body: { schemaVersion: 1, blocks: [{ type: 'paragraph', text: bodyText }], attachments:all.map(m=>({...m,publicUrl:m.url})) }, status, contentTypeId, unitId: selected?.unit_id ?? data.units[0]?.id ?? '', language, visibility: 'public' }, status === 'published' ? 'Konten berhasil dipublikasikan.' : status === 'scheduled' ? 'Konten berhasil dijadwalkan.' : 'Draft berhasil disimpan.');}catch(e){setMediaError(e instanceof Error?e.message:'Media belum tersimpan.')}finally{setMediaBusy(false)}
+    setMediaBusy(true);
+    setMediaError('');
+    try {
+      const uploaded = await uploadFiles(
+        files,
+        'public-media',
+        8 - attachments.length,
+        20 * 1024 * 1024,
+      );
+      const all = [
+        ...attachments,
+        ...uploaded.map((m) => ({
+          url: m.publicUrl,
+          name: m.name,
+          mimeType: m.mimeType,
+          assetId: m.assetId,
+        })),
+      ];
+      setAttachments(all);
+      setFiles([]);
+      await runAction(
+        'content.save',
+        {
+          id: selected?.id ?? '',
+          title: title.trim(),
+          slug: slug.trim(),
+          summary: summary.trim(),
+          body: {
+            ...(typeof selected?.body === 'object' ? selected.body : {}),
+            schemaVersion: 1,
+            blocks:
+              !bodyEdited &&
+              typeof selected?.body === 'object' &&
+              selected.body &&
+              'blocks' in selected.body
+                ? selected.body.blocks
+                : [{ type: 'paragraph', text: bodyText }],
+            attachments: all.map((m) => ({ ...m, publicUrl: m.url })),
+          },
+          status,
+          contentTypeId,
+          unitId: selected?.unit_id ?? data.units[0]?.id ?? '',
+          language,
+          visibility: 'public',
+        },
+        status === 'published'
+          ? 'Konten berhasil dipublikasikan.'
+          : status === 'scheduled'
+            ? 'Konten berhasil dijadwalkan.'
+            : 'Draft berhasil disimpan.',
+      );
+    } catch (e) {
+      setMediaError(e instanceof Error ? e.message : 'Media belum tersimpan.');
+    } finally {
+      setMediaBusy(false);
+    }
   };
-  const exportContent = () => { const blob=new Blob([JSON.stringify({ title,slug,summary,body:bodyText },null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${slug || 'konten'}.json`;a.click();URL.revokeObjectURL(a.href); };
+  const exportContent = () => {
+    const blob = new Blob(
+      [JSON.stringify({ title, slug, summary, body: bodyText }, null, 2)],
+      { type: 'application/json' },
+    );
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${slug || 'konten'}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
   return (
     <div className="v4-admin-content">
       <PageTitle
@@ -257,42 +388,122 @@ export function CmsEditorV4() {
             <button disabled={mediaBusy} onClick={() => void save('draft')}>
               <Save /> Simpan Draft
             </button>
-            <button onClick={() => {
-              if (!selected) return alert('Simpan konten terlebih dahulu untuk melihat pratinjau.');
-              const key = data.contentTypes.find((item) => item.id === selected.content_type_id)?.key;
-              const href = key === 'program' ? `/program/${selected.slug}` : key === 'd-trace' ? '/d-trace' : key === 'd-dar' ? '/d-dar' : `/berita/${selected.slug}`;
-              window.open(href, '_blank', 'noopener,noreferrer');
-            }}>◉ Preview</button>
+            <button
+              onClick={() => {
+                if (!selected)
+                  return alert(
+                    'Simpan konten terlebih dahulu untuk melihat pratinjau.',
+                  );
+                const key = data.contentTypes.find(
+                  (item) => item.id === selected.content_type_id,
+                )?.key;
+                const href =
+                  key === 'program'
+                    ? `/program/${selected.slug}`
+                    : key === 'd-trace'
+                      ? '/d-trace'
+                      : key === 'd-dar'
+                        ? '/d-dar'
+                        : `/berita/${selected.slug}`;
+                window.open(href, '_blank', 'noopener,noreferrer');
+              }}
+            >
+              ◉ Preview
+            </button>
             <button disabled={mediaBusy} onClick={() => void save('scheduled')}>
               <CalendarDays /> Jadwalkan
             </button>
-            <button className="primary" disabled={mediaBusy} onClick={() => void save('published')}>Publikasikan⌄</button>
+            <button
+              className="primary"
+              disabled={mediaBusy}
+              onClick={() => void save('published')}
+            >
+              {selected?.status === 'published'
+                ? 'Simpan Perubahan'
+                : 'Publikasikan'}
+            </button>
           </>
         }
       />
-      {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
+      {(loading || error || message) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error || message}
+        </p>
+      )}
+      <label>
+        Pilih konten untuk diedit
+        <select
+          value={selectedId}
+          disabled={mediaBusy}
+          onChange={(event) => {
+            window.location.assign(
+              '/admin/cms?id=' + encodeURIComponent(event.target.value),
+            );
+          }}
+        >
+          <option value="">Konten baru</option>
+          {data.contents
+            .filter(
+              (item) =>
+                item.content_type === 'berita' ||
+                item.content_type === 'd-sight',
+            )
+            .map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title} — {item.status}
+              </option>
+            ))}
+        </select>
+      </label>
       <div className="v4-editor-grid">
         <section className="v4-panel v4-editor">
           <h2>Informasi Konten</h2>
           <div className="v4-form-two">
             <label>
               Judul *
-              <input value={title} onChange={(event) => { setTitle(event.target.value); if (!selected) setSlug(event.target.value.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')); }} />
+              <input
+                value={title}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  if (!selected)
+                    setSlug(
+                      event.target.value
+                        .toLowerCase()
+                        .normalize('NFKD')
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-|-$/g, ''),
+                    );
+                }}
+              />
             </label>
             <label>
               Slug *
-              <input value={slug} onChange={(event) => setSlug(event.target.value)} />
+              <input
+                value={slug}
+                onChange={(event) => setSlug(event.target.value)}
+              />
             </label>
           </div>
           <label>
             Ringkasan / Excerpt *
-            <textarea value={summary} onChange={(event) => setSummary(event.target.value)} />
+            <textarea
+              value={summary}
+              onChange={(event) => setSummary(event.target.value)}
+            />
           </label>
           <div className="v4-form-four">
             <label>
               Tipe Konten
-              <select value={contentTypeId} onChange={(event) => setContentTypeId(event.target.value)}>
-                <option value="">Pilih tipe</option>{data.contentTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              <select
+                value={contentTypeId}
+                onChange={(event) => setContentTypeId(event.target.value)}
+              >
+                <option value="">Pilih tipe</option>
+                {data.contentTypes.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
               </select>
             </label>
             <label>
@@ -304,13 +515,19 @@ export function CmsEditorV4() {
             <label>
               Penulis
               <select value={data.me?.id ?? ''} disabled>
-                <option value={data.me?.id}>{data.me?.name ?? 'Administrator'}</option>
+                <option value={data.me?.id}>
+                  {data.me?.name ?? 'Administrator'}
+                </option>
               </select>
             </label>
             <label>
               Bahasa
-              <select value={language} onChange={(event) => setLanguage(event.target.value)}>
-                <option value="id">Bahasa Indonesia</option><option value="en">English</option>
+              <select
+                value={language}
+                onChange={(event) => setLanguage(event.target.value)}
+              >
+                <option value="id">Bahasa Indonesia</option>
+                <option value="en">English</option>
               </select>
             </label>
           </div>
@@ -323,7 +540,10 @@ export function CmsEditorV4() {
               className="v4-rich-body"
               contentEditable
               suppressContentEditableWarning
-              onInput={(event) => setBodyText(event.currentTarget.innerText)}
+              onInput={(event) => {
+                setBodyEdited(true);
+                setBodyText(event.currentTarget.innerText);
+              }}
             >
               {bodyText}
             </div>
@@ -334,53 +554,84 @@ export function CmsEditorV4() {
           </label>
         </section>
         <section className="v4-panel v4-media-editor">
-          <h2>Media</h2>{mediaError&&<p role="alert">{mediaError}</p>}<ContentGallery items={attachments}/>
-          <label>Gambar Unggulan (Featured Image)</label>
-          <div className="v4-featured">
-            <Image />
-            <span>
-              {fileName}
-              <small>{fileName === 'Belum ada media dipilih' ? 'Pilih media dari perangkat Anda.' : 'Media akan diunggah saat konten disimpan.'}</small>
-            </span>
-          </div>
-          <h3>Gambar Dalam Konten / Galeri</h3>
-          <div className="v4-editor-images">
-            {data.media.slice(0, 6).map((item, index) => (
-              <span key={item.id} title={item.original_filename}>{index + 1}</span>
-            ))}
-            {!data.media.length && <small>Belum ada media pada database.</small>}
-          </div>
-          <input id="cms-media-file" type="file" accept="image/*,video/*" multiple hidden onChange={(event) => setFiles(Array.from(event.target.files??[]))} />
-          <button onClick={() => document.getElementById('cms-media-file')?.click()}>
-            <Upload /> Tambah Gambar / Video
-          </button>
-          <label>
-            Alt Text
-            <input defaultValue="Mahasiswa berdiskusi tentang literasi digital" />
-          </label>
-          <label>
-            Caption
-            <textarea defaultValue="Diskusi kelompok membahas pentingnya literasi digital dalam pembelajaran." />
-          </label>
+          <h2>Media</h2>
+          {mediaError && <p role="alert">{mediaError}</p>}
+          <EditableMedia
+            items={attachments}
+            onChange={setAttachments}
+            files={files}
+            onFilesChange={setFiles}
+            documents={
+              data.contentTypes.find((item) => item.id === contentTypeId)
+                ?.key === 'd-sight'
+            }
+            disabled={mediaBusy}
+          />
         </section>
         <aside>
           <section className="v4-panel v4-preview">
             <h2>Pratinjau Konten</h2>
-            <Badge>{data.contentTypes.find((item) => item.id === contentTypeId)?.name?.toUpperCase() ?? 'TIPE BELUM DIPILIH'}</Badge>
+            <Badge>
+              {data.contentTypes
+                .find((item) => item.id === contentTypeId)
+                ?.name?.toUpperCase() ?? 'TIPE BELUM DIPILIH'}
+            </Badge>
             <h3>{title || 'Judul konten'}</h3>
             <p>{summary || 'Ringkasan konten akan tampil di sini.'}</p>
-            <small>{data.me?.name ?? 'Administrator'}　　{fileName}</small>
+            <small>
+              {data.me?.name ?? 'Administrator'}　　{fileName}
+            </small>
           </section>
           <section className="v4-panel">
             <h2>Revisi & Riwayat</h2>
-            {selected ? <p>●　{selected.status}<small>　{new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(selected.updated_at))}</small></p> : <p>Belum ada revisi untuk konten baru.</p>}
+            {selected ? (
+              <p>
+                ●　{selected.status}
+                <small>
+                  　
+                  {new Intl.DateTimeFormat('id-ID', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                  }).format(new Date(selected.updated_at))}
+                </small>
+              </p>
+            ) : (
+              <p>Belum ada revisi untuk konten baru.</p>
+            )}
           </section>
           <section className="v4-panel v4-danger">
             <h2>Aksi Lanjutan</h2>
-            <button onClick={() => { setSelectedId(''); setTitle(`${title} (Salinan)`); setSlug(`${slug}-salinan`); }}>Duplikasi Konten</button>
+            <button
+              onClick={() => {
+                setSelectedId('');
+                setTitle(`${title} (Salinan)`);
+                setSlug(`${slug}-salinan`);
+              }}
+            >
+              Duplikasi Konten
+            </button>
             <button onClick={exportContent}>Ekspor Konten</button>
-            <button onClick={() => selected && location.reload()}>Rollback ke Data Tersimpan</button>
-            <button disabled={!selected} onClick={() => selected && confirm('Hapus konten ini?') && void runAction('content.delete', { id: selected.id }, 'Konten berhasil dihapus.').then(() => { setSelectedId(''); setTitle(''); setSlug(''); setSummary(''); setBodyText(''); })}>
+            <button onClick={() => selected && location.reload()}>
+              Rollback ke Data Tersimpan
+            </button>
+            <button
+              disabled={!selected}
+              onClick={() =>
+                selected &&
+                confirm('Hapus konten ini?') &&
+                void runAction(
+                  'content.delete',
+                  { id: selected.id },
+                  'Konten berhasil dihapus.',
+                ).then(() => {
+                  setSelectedId('');
+                  setTitle('');
+                  setSlug('');
+                  setSummary('');
+                  setBodyText('');
+                })
+              }
+            >
               <Trash2 /> Hapus Konten
             </button>
           </section>
@@ -407,18 +658,38 @@ export function DdasCaseV4() {
     <div className="v4-admin-content">
       <PageTitle
         title="Detail Kasus D-DAS"
-        copy={current ? `Nomor tiket ${current.ticket_public_id} · data publik telah disanitasi.` : 'Belum ada kasus D-DAS pada database.'}
-        actions={<button onClick={() => location.assign('/admin/dashboard')}>← Kembali</button>}
+        copy={
+          current
+            ? `Nomor tiket ${current.ticket_public_id} · data publik telah disanitasi.`
+            : 'Belum ada kasus D-DAS pada database.'
+        }
+        actions={
+          <button onClick={() => location.assign('/admin/dashboard')}>
+            ← Kembali
+          </button>
+        }
       />
-      {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
+      {(loading || error || message) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error || message}
+        </p>
+      )}
       <div className="v4-case-summary">
         {[
           ['No. Tiket', current?.ticket_public_id ?? '—'],
           ['Kategori', current?.subject ?? '—'],
           ['Prioritas', current?.priority ?? '—'],
-          ['Unit Penanggung Jawab', current?.assigned_unit ?? 'Belum ditugaskan'],
+          [
+            'Unit Penanggung Jawab',
+            current?.assigned_unit ?? 'Belum ditugaskan',
+          ],
           ['Status Saat Ini', current?.status ?? '—'],
-          ['SLA Respon', current?.submitted_at ? `${Math.max(0, Math.round((Date.now() - new Date(current.submitted_at).getTime()) / 86400000 * 10) / 10)} hari` : '—'],
+          [
+            'SLA Respon',
+            current?.submitted_at
+              ? `${Math.max(0, Math.round(((Date.now() - new Date(current.submitted_at).getTime()) / 86400000) * 10) / 10)} hari`
+              : '—',
+          ],
         ].map((x) => (
           <span key={x[0]}>
             <small>{x[0]}</small>
@@ -431,12 +702,16 @@ export function DdasCaseV4() {
           <section className="v4-panel">
             <h2>Ringkasan Aspirasi (Publik)</h2>
             <p>{current?.subject ?? 'Belum ada ringkasan aspirasi.'}</p>
-          <div className="v4-mini-grid">
+            <div className="v4-mini-grid">
               <span>
                 Dibuat oleh<b>Pengguna (Disamarkan)</b>
               </span>
               <span>
-                Periode<b>{data.periods.find((item) => item.is_current)?.name ?? 'Belum diatur'}</b>
+                Periode
+                <b>
+                  {data.periods.find((item) => item.is_current)?.name ??
+                    'Belum diatur'}
+                </b>
               </span>
               <span>
                 Lokasi<b>Tidak dicatat pada ringkasan publik</b>
@@ -448,12 +723,29 @@ export function DdasCaseV4() {
           </section>
           <section className="v4-panel v4-timeline">
             <h2>Timeline Publik (Sanitized)</h2>
-            {(current?.timeline.length ? current.timeline : timeline.map((state) => ({ state, message: 'Menunggu proses', occurredAt: '' }))).map((item, i) => (
-              <p key={`${item.state}-${i}`} className={item.occurredAt ? 'done' : ''}>
+            {(current?.timeline.length
+              ? current.timeline
+              : timeline.map((state) => ({
+                  state,
+                  message: 'Menunggu proses',
+                  occurredAt: '',
+                }))
+            ).map((item, i) => (
+              <p
+                key={`${item.state}-${i}`}
+                className={item.occurredAt ? 'done' : ''}
+              >
                 <Check />
                 <span>
                   <b>{item.state}</b>
-                  <small>{item.occurredAt ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.occurredAt)) : item.message}</small>
+                  <small>
+                    {item.occurredAt
+                      ? new Intl.DateTimeFormat('id-ID', {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        }).format(new Date(item.occurredAt))
+                      : item.message}
+                  </small>
                 </span>
               </p>
             ))}
@@ -466,15 +758,45 @@ export function DdasCaseV4() {
               <span>📎 Lampiran Internal</span>
               <span>Penugasan Unit</span>
             </nav>
-            <textarea value={internalNote} onChange={(event) => setInternalNote(event.target.value)} placeholder="Tulis catatan internal (tidak akan ditampilkan ke publik)..." />
-            <button className="primary" disabled={!current || !internalNote.trim()} onClick={() => current && void runAction('ddas.internal_note', { id: current.id, message: internalNote.trim() }, 'Catatan internal berhasil disimpan.').then(() => setInternalNote(''))}>
+            <textarea
+              value={internalNote}
+              onChange={(event) => setInternalNote(event.target.value)}
+              placeholder="Tulis catatan internal (tidak akan ditampilkan ke publik)..."
+            />
+            <button
+              className="primary"
+              disabled={!current || !internalNote.trim()}
+              onClick={() =>
+                current &&
+                void runAction(
+                  'ddas.internal_note',
+                  { id: current.id, message: internalNote.trim() },
+                  'Catatan internal berhasil disimpan.',
+                ).then(() => setInternalNote(''))
+              }
+            >
               <LockKeyhole /> Simpan Catatan
             </button>
           </section>
           <section className="v4-panel">
             <h2>Pesan Pembaruan Publik</h2>
-            <textarea value={publicUpdate} onChange={(event) => setPublicUpdate(event.target.value)} placeholder="Tulis pembaruan untuk diinformasikan kepada pelapor..." />
-            <button className="primary" disabled={!current || !publicUpdate.trim()} onClick={() => current && void runAction('ddas.public_update', { id: current.id, message: publicUpdate.trim() }, 'Pembaruan publik berhasil dikirim.').then(() => setPublicUpdate(''))}>
+            <textarea
+              value={publicUpdate}
+              onChange={(event) => setPublicUpdate(event.target.value)}
+              placeholder="Tulis pembaruan untuk diinformasikan kepada pelapor..."
+            />
+            <button
+              className="primary"
+              disabled={!current || !publicUpdate.trim()}
+              onClick={() =>
+                current &&
+                void runAction(
+                  'ddas.public_update',
+                  { id: current.id, message: publicUpdate.trim() },
+                  'Pembaruan publik berhasil dikirim.',
+                ).then(() => setPublicUpdate(''))
+              }
+            >
               <Send /> Kirim Pembaruan
             </button>
           </section>
@@ -482,8 +804,33 @@ export function DdasCaseV4() {
             <h2>Ubah Status Workflow</h2>
             <div className="v4-status-buttons">
               {timeline.map((x, index) => {
-                const status = ['received','triaged','assigned','in_progress','resolved'][index];
-                return <button key={x} disabled={!current} onClick={() => current && void runAction('ddas.status', { id: current.id, status, message: `Status aspirasi diperbarui menjadi ${x}.` }, 'Status workflow berhasil diperbarui.')}>{x}</button>
+                const status = [
+                  'received',
+                  'triaged',
+                  'assigned',
+                  'in_progress',
+                  'resolved',
+                ][index];
+                return (
+                  <button
+                    key={x}
+                    disabled={!current}
+                    onClick={() =>
+                      current &&
+                      void runAction(
+                        'ddas.status',
+                        {
+                          id: current.id,
+                          status,
+                          message: `Status aspirasi diperbarui menjadi ${x}.`,
+                        },
+                        'Status workflow berhasil diperbarui.',
+                      )
+                    }
+                  >
+                    {x}
+                  </button>
+                );
               })}
             </div>
             <p className="v4-blue-note">
@@ -499,14 +846,29 @@ export function DdasCaseV4() {
             {caseAudit.map((item) => (
               <p key={item.id}>
                 <b>{item.actor_name ?? item.actor_type}</b>
-                <small>{item.action} · {new Intl.DateTimeFormat('id-ID', { dateStyle:'medium', timeStyle:'short' }).format(new Date(item.occurred_at))}</small>
+                <small>
+                  {item.action} ·{' '}
+                  {new Intl.DateTimeFormat('id-ID', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                  }).format(new Date(item.occurred_at))}
+                </small>
               </p>
             ))}
-            {!caseAudit.length && <p className="v5-filter-empty">Belum ada event audit untuk kasus ini.</p>}
+            {!caseAudit.length && (
+              <p className="v5-filter-empty">
+                Belum ada event audit untuk kasus ini.
+              </p>
+            )}
           </section>
           <section className="v4-panel">
             <h2>Aktivitas Terbaru</h2>
-            {current?.timeline.slice(-3).reverse().map((item) => <p key={`${item.state}-${item.occurredAt}`}>● {item.message}</p>)}
+            {current?.timeline
+              .slice(-3)
+              .reverse()
+              .map((item) => (
+                <p key={`${item.state}-${item.occurredAt}`}>● {item.message}</p>
+              ))}
             {!current?.timeline.length && <p>Belum ada aktivitas.</p>}
           </section>
           <section className="v4-panel">
@@ -524,7 +886,29 @@ export function DdasCaseV4() {
 
 export function CommentsV4() {
   const { data, loading, error, reload } = useAdminPortal();
-  const comments = data.comments.map((item) => ({ id: item.id, threadId:item.thread_id, parentId:item.parent_id, author: item.display_mode === 'anonymous' ? 'Anonim' : item.display_name || 'Pengguna', status: item.status === 'pending' ? 'Perlu Penyaringan' : item.status === 'published' ? 'Dipublikasikan' : item.status === 'rejected' ? 'Ditolak' : item.status, body: item.body, source: item.resource_type === 'page' ? 'Beranda' : item.resource_type, date: new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(item.created_at)), createdAt:item.created_at }));
+  const comments = data.comments.map((item) => ({
+    id: item.id,
+    threadId: item.thread_id,
+    parentId: item.parent_id,
+    author:
+      item.display_mode === 'anonymous'
+        ? 'Anonim'
+        : item.display_name || 'Pengguna',
+    status:
+      item.status === 'pending'
+        ? 'Perlu Penyaringan'
+        : item.status === 'published'
+          ? 'Dipublikasikan'
+          : item.status === 'rejected'
+            ? 'Ditolak'
+            : item.status,
+    body: item.body,
+    source: item.resource_type === 'page' ? 'Beranda' : item.resource_type,
+    date: new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(
+      new Date(item.created_at),
+    ),
+    createdAt: item.created_at,
+  }));
   const [source, setSource] = useState('Semua');
   const [status, setStatus] = useState('Semua');
   const [sort, setSort] = useState('Terbaru');
@@ -532,21 +916,47 @@ export function CommentsV4() {
   const [selected, setSelected] = useState(0);
   const filtered = useMemo(
     () =>
-      comments.filter(
-        (item) =>
-          (source === 'Semua' || item.source === source) &&
-          (status === 'Semua' || item.status === status) &&
-          `${item.author} ${item.body}`
-            .toLowerCase()
-            .includes(query.toLowerCase()),
-      ).sort((a, b) => sort === 'Terlama' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)),
+      comments
+        .filter(
+          (item) =>
+            (source === 'Semua' || item.source === source) &&
+            (status === 'Semua' || item.status === status) &&
+            `${item.author} ${item.body}`
+              .toLowerCase()
+              .includes(query.toLowerCase()),
+        )
+        .sort((a, b) =>
+          sort === 'Terlama'
+            ? a.date.localeCompare(b.date)
+            : b.date.localeCompare(a.date),
+        ),
     [comments, source, status, query, sort],
   );
-  const active = filtered[selected] ?? filtered[0] ?? { id: '', threadId:'', parentId:undefined, author: '—', status: 'Kosong', body: 'Belum ada komentar pada database.', source: '—', date: '—', createdAt:'' };
-  const replies=comments.filter((item)=>item.threadId===active.threadId&&item.parentId===active.id);
-  async function moderate(status: 'published' | 'hidden' | 'rejected', reasonCode: 'approved' | 'other') {
+  const active = filtered[selected] ??
+    filtered[0] ?? {
+      id: '',
+      threadId: '',
+      parentId: undefined,
+      author: '—',
+      status: 'Kosong',
+      body: 'Belum ada komentar pada database.',
+      source: '—',
+      date: '—',
+      createdAt: '',
+    };
+  const replies = comments.filter(
+    (item) => item.threadId === active.threadId && item.parentId === active.id,
+  );
+  async function moderate(
+    status: 'published' | 'hidden' | 'rejected',
+    reasonCode: 'approved' | 'other',
+  ) {
     if (!active.id) return;
-    const response = await fetch('/api/admin/comments', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ commentId: active.id, status, reasonCode }) });
+    const response = await fetch('/api/admin/comments', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commentId: active.id, status, reasonCode }),
+    });
     if (!response.ok) return alert('Keputusan penyaringan gagal disimpan.');
     await reload();
   }
@@ -556,13 +966,28 @@ export function CommentsV4() {
         title="Komentar & Penyaringan"
         copy="Tinjau, saring, dan kelola semua komentar dari Beranda, Berita, dan halaman lainnya."
       />
-      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
+      {(loading || error) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error}
+        </p>
+      )}
       <div className="v4-comment-stats">
         {[
           ['Total Komentar', String(comments.length)],
-          ['Perlu Penyaringan', String(comments.filter((x) => x.status === 'Perlu Penyaringan').length)],
-          ['Anonim', String(comments.filter((x) => x.author === 'Anonim').length)],
-          ['Ditolak', String(comments.filter((x) => x.status === 'Ditolak').length)],
+          [
+            'Perlu Penyaringan',
+            String(
+              comments.filter((x) => x.status === 'Perlu Penyaringan').length,
+            ),
+          ],
+          [
+            'Anonim',
+            String(comments.filter((x) => x.author === 'Anonim').length),
+          ],
+          [
+            'Ditolak',
+            String(comments.filter((x) => x.status === 'Ditolak').length),
+          ],
         ].map((x) => (
           <article key={x[0]}>
             <MessageSquare />
@@ -583,7 +1008,9 @@ export function CommentsV4() {
           aria-label="Saring berdasarkan sumber"
         >
           <option value="Semua">Semua Sumber</option>
-          {[...new Set(comments.map((item) => item.source))].map((item) => <option key={item}>{item}</option>)}
+          {[...new Set(comments.map((item) => item.source))].map((item) => (
+            <option key={item}>{item}</option>
+          ))}
         </select>
         <select
           value={status}
@@ -599,7 +1026,8 @@ export function CommentsV4() {
           <option value="Ditolak">Ditolak</option>
         </select>
         <select value={sort} onChange={(event) => setSort(event.target.value)}>
-          <option>Terbaru</option><option>Terlama</option>
+          <option>Terbaru</option>
+          <option>Terlama</option>
         </select>
         <label>
           <input
@@ -680,8 +1108,18 @@ export function CommentsV4() {
             <button onClick={() => void moderate('hidden', 'other')}>
               <Trash2 /> Hapus Thread
             </button>
-            <button onClick={() => active.id && location.assign(`/admin/comments?comment=${active.id}`)}>Lihat Thread Lengkap</button>
-            <button className="primary" onClick={() => void moderate('published', 'approved')}>
+            <button
+              onClick={() =>
+                active.id &&
+                location.assign(`/admin/comments?comment=${active.id}`)
+              }
+            >
+              Lihat Thread Lengkap
+            </button>
+            <button
+              className="primary"
+              onClick={() => void moderate('published', 'approved')}
+            >
               <ShieldCheck /> Saring Komentar
             </button>
           </footer>
@@ -696,7 +1134,14 @@ export function IamV4() {
   const users = data.users.map((user) => {
     const role = user.roles[0];
     const unit = data.units.find((item) => item.id === role?.unitId);
-    return [user.display_name, unit?.name ?? 'Semua Unit', role?.name ?? 'Tanpa Role', user.status === 'active' ? 'Aktif' : user.status, user.email_normalized ?? '', user.last_active_at ?? ''];
+    return [
+      user.display_name,
+      unit?.name ?? 'Semua Unit',
+      role?.name ?? 'Tanpa Role',
+      user.status === 'active' ? 'Aktif' : user.status,
+      user.email_normalized ?? '',
+      user.last_active_at ?? '',
+    ];
   });
   const [userQuery, setUserQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('Semua');
@@ -721,7 +1166,11 @@ export function IamV4() {
         title="Pengguna, Role, Permission & DPM Units"
         copy="Kelola akun pengguna, role, izin akses, dan unit DPM secara terpusat dan aman."
       />
-      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
+      {(loading || error) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error}
+        </p>
+      )}
       <div className="v5-role-note">
         <ShieldCheck />
         <p>
@@ -742,7 +1191,17 @@ export function IamV4() {
           'DPM Units',
           'Akses per Unit',
         ].map((x, i) => (
-          <button className={i === 1 ? 'active' : ''} key={x} onClick={() => location.assign(x === 'Permission Matrix' ? '/admin/permission' : `#${x.toLowerCase().replaceAll(' ', '-')}`)}>
+          <button
+            className={i === 1 ? 'active' : ''}
+            key={x}
+            onClick={() =>
+              location.assign(
+                x === 'Permission Matrix'
+                  ? '/admin/permission'
+                  : `#${x.toLowerCase().replaceAll(' ', '-')}`,
+              )
+            }
+          >
             {x}
           </button>
         ))}
@@ -754,7 +1213,10 @@ export function IamV4() {
               <h2>Daftar Pengguna</h2>
               <p>Kelola akun pengguna dan penetapan role berdasarkan unit.</p>
             </div>
-            <button className="primary" onClick={() => location.assign('/admin/settings?tab=users')}>
+            <button
+              className="primary"
+              onClick={() => location.assign('/admin/settings?tab=users')}
+            >
               <Plus /> Tambah Pengguna
             </button>
           </header>
@@ -815,7 +1277,13 @@ export function IamV4() {
                 <span>
                   <Badge>{u[3]}</Badge>
                 </span>
-                <span>{u[5] ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(u[5])) : 'Belum pernah'}</span>
+                <span>
+                  {u[5]
+                    ? new Intl.DateTimeFormat('id-ID', {
+                        dateStyle: 'medium',
+                      }).format(new Date(u[5]))
+                    : 'Belum pernah'}
+                </span>
               </p>
             ))}
             {!filteredUsers.length && (
@@ -829,7 +1297,10 @@ export function IamV4() {
           <section className="v4-panel">
             <header>
               <h2>DPM Units</h2>
-              <button className="primary" onClick={() => location.assign('/admin/settings?tab=units')}>
+              <button
+                className="primary"
+                onClick={() => location.assign('/admin/settings?tab=units')}
+              >
                 <Plus /> Tambah Unit
               </button>
             </header>
@@ -837,8 +1308,20 @@ export function IamV4() {
               <p className="v4-unit-row" key={x.id}>
                 <b>{x.name}</b>
                 <span>{x.code}</span>
-                <span>{data.users.filter((user) => user.roles.some((role) => role.unitId === x.id)).length}</span>
-                <button onClick={() => location.assign(`/admin/settings?tab=units&id=${x.id}`)}>✎</button>
+                <span>
+                  {
+                    data.users.filter((user) =>
+                      user.roles.some((role) => role.unitId === x.id),
+                    ).length
+                  }
+                </span>
+                <button
+                  onClick={() =>
+                    location.assign(`/admin/settings?tab=units&id=${x.id}`)
+                  }
+                >
+                  ✎
+                </button>
               </p>
             ))}
           </section>
@@ -855,15 +1338,33 @@ export function IamV4() {
         <h2>Permission Matrix</h2>
         <div className="v4-permission-grid">
           <b>Permission</b>
-          {['super_admin','chairperson','secretary','dpm_unit','ormawa'].map((key) => (
-            <b key={key}>{data.roles.find((role) => role.key === key)?.name ?? key}</b>
+          {[
+            'super_admin',
+            'chairperson',
+            'secretary',
+            'dpm_unit',
+            'ormawa',
+          ].map((key) => (
+            <b key={key}>
+              {data.roles.find((role) => role.key === key)?.name ?? key}
+            </b>
           ))}
-          {data.permissions.slice(0, 8).flatMap((permission) => [
-            <span key={permission.key}>{permission.key}</span>,
-            ...['super_admin','chairperson','secretary','dpm_unit','ormawa'].map((roleKey) => (
-              <i key={permission.key + roleKey}>{permission.roles?.[roleKey] ? '✓' : '□'}</i>
-            )),
-          ])}
+          {data.permissions
+            .slice(0, 8)
+            .flatMap((permission) => [
+              <span key={permission.key}>{permission.key}</span>,
+              ...[
+                'super_admin',
+                'chairperson',
+                'secretary',
+                'dpm_unit',
+                'ormawa',
+              ].map((roleKey) => (
+                <i key={permission.key + roleKey}>
+                  {permission.roles?.[roleKey] ? '✓' : '□'}
+                </i>
+              )),
+            ])}
         </div>
       </section>
     </div>

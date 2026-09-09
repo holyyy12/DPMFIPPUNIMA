@@ -1,3 +1,81 @@
-.content-media-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:16px;margin-block:20px}.content-media-gallery figure{margin:0;min-width:0}.content-media-gallery img,.content-media-gallery video{width:100%;max-height:460px;object-fit:contain;border-radius:8px;background:#f0f4f2}.content-media-gallery figcaption{font-size:14px;overflow-wrap:anywhere;padding-top:6px}
-.v5-ddas-workspace{grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);align-items:start}.v5-ddas-workspace>*{min-width:0}.v5-ddas-workspace .ddas-form{position:relative;min-width:0}.v5-ddas-workspace .form-section{position:relative;min-width:0}.v5-ddas-workspace input[type=email],.v5-ddas-workspace input[type=tel]{position:relative;pointer-events:auto;width:100%;font-size:16px}.v5-ddas-workspace .consent-row input{width:20px;min-width:20px;height:20px;min-height:20px;flex:0 0 20px}.survey-choice{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #cedbd4;border-radius:8px;margin:8px 0;cursor:pointer}.survey-choice input{width:20px;height:20px;accent-color:#006047}.survey-feedback{margin-block:12px}.ddas-upload-list{overflow-wrap:anywhere}.ddas-upload-list li{margin-block:12px}
-@media(max-width:900px){.v5-ddas-workspace{grid-template-columns:1fr}}
+.content-media-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 16px;
+  margin-block: 20px;
+}
+.content-media-gallery figure {
+  margin: 0;
+  min-width: 0;
+}
+.content-media-gallery img,
+.content-media-gallery video {
+  width: 100%;
+  max-height: 460px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #f0f4f2;
+}
+.content-media-gallery figcaption {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  padding-top: 6px;
+}
+.v5-ddas-workspace {
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+  align-items: start;
+}
+.v5-ddas-workspace > * {
+  min-width: 0;
+}
+.v5-ddas-workspace .ddas-form {
+  position: relative;
+  min-width: 0;
+}
+.v5-ddas-workspace .form-section {
+  position: relative;
+  min-width: 0;
+}
+.v5-ddas-workspace input[type='email'],
+.v5-ddas-workspace input[type='tel'] {
+  position: relative;
+  pointer-events: auto;
+  width: 100%;
+  font-size: 16px;
+}
+.v5-ddas-workspace .consent-row input {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  flex: 0 0 20px;
+}
+.survey-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #cedbd4;
+  border-radius: 8px;
+  margin: 8px 0;
+  cursor: pointer;
+}
+.survey-choice input {
+  width: 20px;
+  height: 20px;
+  accent-color: #006047;
+}
+.survey-feedback {
+  margin-block: 12px;
+}
+.ddas-upload-list {
+  overflow-wrap: anywhere;
+}
+.ddas-upload-list li {
+  margin-block: 12px;
+}
+@media (max-width: 900px) {
+  .v5-ddas-workspace {
+    grid-template-columns: 1fr;
+  }
+}

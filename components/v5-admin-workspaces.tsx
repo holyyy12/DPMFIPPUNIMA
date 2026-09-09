@@ -61,10 +61,12 @@ function Title({
 }) {
   return (
     <header className="v4-admin-title">
-      {action && <div>
-        <h1>{title}</h1>
-        <p>{copy}</p>
-      </div>}
+      {action && (
+        <div>
+          <h1>{title}</h1>
+          <p>{copy}</p>
+        </div>
+      )}
       <div>
         <button
           type="button"
@@ -104,28 +106,86 @@ function Metric({
 
 export function SiteContentAdmin() {
   const { data, loading, error, message, runAction } = useAdminPortal();
-  const stored = data.settings['site.home'] as Partial<{ title:string; subtitle:string; paragraph:string; image:string; logo:string; favicon:string; socialPreview:string; aboutPhoto:string; ormawaLogo:string; publicationThumbnail:string; cta1:string; cta1Href:string; cta2:string; cta2Href:string }> | undefined;
-  const [form, setForm] = useState({ title:'DPM FIPP UNIMA', subtitle:'Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.', paragraph:'DPM FIPP UNIMA hadir sebagai jembatan komunikasi antara mahasiswa dan fakultas untuk mendorong perubahan, transparansi, dan kemajuan bersama.', image:'/fipp-campus-hero.png', logo:'/dpm-crest.png', favicon:'/favicon-dpm.png', socialPreview:'/og.png', aboutPhoto:'/fipp-campus-hero.png', ormawaLogo:'/dpm-crest.png', publicationThumbnail:'/fipp-campus-hero.png', cta1:'Jelajahi DPM', cta1Href:'/tentang', cta2:'Kirim Aspirasi', cta2Href:'/ddas' });
-  const [assetMessage,setAssetMessage]=useState('');
-  useEffect(() => { if (stored) setForm((current) => ({ ...current, ...stored })); }, [JSON.stringify(stored)]);
-  const field = (key: keyof typeof form, value:string) => setForm((current) => ({ ...current, [key]:value }));
-  const uploadAsset = async (key:keyof typeof form, file?:File) => {
-    if(!file) return;
-    if(file.size>20*1024*1024) return setAssetMessage('Aset maksimal 20 MB.');
-    const body=new FormData();body.set('file',file);body.set('bucket','public-media');body.set('alt',`Aset ${String(key)}`);
-    const response=await fetch('/api/admin/media',{method:'POST',body});
-    const payload=await response.json() as {ok:boolean;data?:{publicUrl:string};message?:string};
-    if(!response.ok||!payload.ok||!payload.data?.publicUrl) return setAssetMessage(payload.message||'Aset gagal diunggah.');
-    field(key,payload.data.publicUrl);setAssetMessage('Aset berhasil diunggah. Klik Simpan Perubahan untuk menerapkannya.');
+  const stored = data.settings['site.home'] as
+    | Partial<{
+        title: string;
+        subtitle: string;
+        paragraph: string;
+        image: string;
+        logo: string;
+        favicon: string;
+        socialPreview: string;
+        aboutPhoto: string;
+        ormawaLogo: string;
+        publicationThumbnail: string;
+        cta1: string;
+        cta1Href: string;
+        cta2: string;
+        cta2Href: string;
+      }>
+    | undefined;
+  const [form, setForm] = useState({
+    title: 'DPM FIPP UNIMA',
+    subtitle: 'Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.',
+    paragraph:
+      'DPM FIPP UNIMA hadir sebagai jembatan komunikasi antara mahasiswa dan fakultas untuk mendorong perubahan, transparansi, dan kemajuan bersama.',
+    image: '/fipp-campus-hero.png',
+    logo: '/dpm-crest.png',
+    favicon: '/favicon-dpm.png',
+    socialPreview: '/og.png',
+    aboutPhoto: '/fipp-campus-hero.png',
+    ormawaLogo: '/dpm-crest.png',
+    publicationThumbnail: '/fipp-campus-hero.png',
+    cta1: 'Jelajahi DPM',
+    cta1Href: '/tentang',
+    cta2: 'Kirim Aspirasi',
+    cta2Href: '/ddas',
+  });
+  const [assetMessage, setAssetMessage] = useState('');
+  useEffect(() => {
+    if (stored) setForm((current) => ({ ...current, ...stored }));
+  }, [JSON.stringify(stored)]);
+  const field = (key: keyof typeof form, value: string) =>
+    setForm((current) => ({ ...current, [key]: value }));
+  const uploadAsset = async (key: keyof typeof form, file?: File) => {
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024)
+      return setAssetMessage('Aset maksimal 20 MB.');
+    const body = new FormData();
+    body.set('file', file);
+    body.set('bucket', 'public-media');
+    body.set('alt', `Aset ${String(key)}`);
+    const response = await fetch('/api/admin/media', { method: 'POST', body });
+    const payload = (await response.json()) as {
+      ok: boolean;
+      data?: { publicUrl: string };
+      message?: string;
+    };
+    if (!response.ok || !payload.ok || !payload.data?.publicUrl)
+      return setAssetMessage(payload.message || 'Aset gagal diunggah.');
+    field(key, payload.data.publicUrl);
+    setAssetMessage(
+      'Aset berhasil diunggah. Klik Simpan Perubahan untuk menerapkannya.',
+    );
   };
   return (
     <div className="v4-admin-content v5-admin-workspace">
       <Title
         title="Tampilan Situs & Aset"
         copy="Kelola Hero Beranda, teks institusional, logo, foto, dan navigasi tanpa mengubah kode."
-        onAction={() => void runAction('setting.save', { namespace:'site', key:'home', value:form, isPublic:true }, 'Tampilan situs berhasil disimpan ke Supabase.')}
+        onAction={() =>
+          void runAction(
+            'setting.save',
+            { namespace: 'site', key: 'home', value: form, isPublic: true },
+            'Tampilan situs berhasil disimpan ke Supabase.',
+          )
+        }
       />
-      {(loading || error || message || assetMessage) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message || assetMessage}</p>}
+      {(loading || error || message || assetMessage) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error || message || assetMessage}
+        </p>
+      )}
       <div className="v5-admin-layout">
         <main>
           <section className="v4-panel v5-admin-form">
@@ -135,15 +195,24 @@ export function SiteContentAdmin() {
             </header>
             <label>
               Judul utama
-              <input value={form.title} onChange={(event) => field('title',event.target.value)} />
+              <input
+                value={form.title}
+                onChange={(event) => field('title', event.target.value)}
+              />
             </label>
             <label>
               Subjudul
-              <input value={form.subtitle} onChange={(event) => field('subtitle',event.target.value)} />
+              <input
+                value={form.subtitle}
+                onChange={(event) => field('subtitle', event.target.value)}
+              />
             </label>
             <label>
               Paragraf
-              <textarea value={form.paragraph} onChange={(event) => field('paragraph',event.target.value)} />
+              <textarea
+                value={form.paragraph}
+                onChange={(event) => field('paragraph', event.target.value)}
+              />
             </label>
             <label>
               Gambar Hero
@@ -152,7 +221,13 @@ export function SiteContentAdmin() {
                 <span>
                   <label className="v9-file-button">
                     <Upload /> Ganti Gambar
-                    <input type="file" accept="image/*" onChange={(event)=>void uploadAsset('image',event.target.files?.[0])}/>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) =>
+                        void uploadAsset('image', event.target.files?.[0])
+                      }
+                    />
                   </label>
                   <small>JPG, PNG, WebP · rekomendasi 2400×1000 px</small>
                 </span>
@@ -165,18 +240,32 @@ export function SiteContentAdmin() {
             </header>
             <div className="v5-form-grid">
               <label>
-                CTA 1<input value={form.cta1} onChange={(event) => field('cta1',event.target.value)} />
+                CTA 1
+                <input
+                  value={form.cta1}
+                  onChange={(event) => field('cta1', event.target.value)}
+                />
               </label>
               <label>
                 Tujuan
-                <input value={form.cta1Href} onChange={(event) => field('cta1Href',event.target.value)} />
+                <input
+                  value={form.cta1Href}
+                  onChange={(event) => field('cta1Href', event.target.value)}
+                />
               </label>
               <label>
-                CTA 2<input value={form.cta2} onChange={(event) => field('cta2',event.target.value)} />
+                CTA 2
+                <input
+                  value={form.cta2}
+                  onChange={(event) => field('cta2', event.target.value)}
+                />
               </label>
               <label>
                 Tujuan
-                <input value={form.cta2Href} onChange={(event) => field('cta2Href',event.target.value)} />
+                <input
+                  value={form.cta2Href}
+                  onChange={(event) => field('cta2Href', event.target.value)}
+                />
               </label>
             </div>
           </section>
@@ -192,7 +281,13 @@ export function SiteContentAdmin() {
                 <img src={form.logo} alt="Logo saat ini" />
                 <label className="v9-file-button">
                   <Upload /> Ganti Logo
-                  <input type="file" accept="image/*" onChange={(event)=>void uploadAsset('logo',event.target.files?.[0])}/>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) =>
+                      void uploadAsset('logo', event.target.files?.[0])
+                    }
+                  />
                 </label>
               </div>
             </label>
@@ -200,14 +295,26 @@ export function SiteContentAdmin() {
               Favicon
               <label className="v9-file-button">
                 <Image /> Unggah Favicon
-                <input type="file" accept="image/*" onChange={(event)=>void uploadAsset('favicon',event.target.files?.[0])}/>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) =>
+                    void uploadAsset('favicon', event.target.files?.[0])
+                  }
+                />
               </label>
             </label>
             <label>
               Gambar Social Preview
               <label className="v9-file-button">
                 <Image /> Ganti Gambar
-                <input type="file" accept="image/*" onChange={(event)=>void uploadAsset('socialPreview',event.target.files?.[0])}/>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) =>
+                    void uploadAsset('socialPreview', event.target.files?.[0])
+                  }
+                />
               </label>
             </label>
           </section>
@@ -215,20 +322,31 @@ export function SiteContentAdmin() {
             <header>
               <h2>Pustaka Aset Cepat</h2>
             </header>
-            {([
-              ['Logo DPM','logo'],
-              ['Hero Beranda','image'],
-              ['Foto Tentang','aboutPhoto'],
-              ['Logo ORMAWA','ormawaLogo'],
-              ['Thumbnail Publikasi','publicationThumbnail'],
-            ] as const).map(([x,key]) => (
+            {(
+              [
+                ['Logo DPM', 'logo'],
+                ['Hero Beranda', 'image'],
+                ['Foto Tentang', 'aboutPhoto'],
+                ['Logo ORMAWA', 'ormawaLogo'],
+                ['Thumbnail Publikasi', 'publicationThumbnail'],
+              ] as const
+            ).map(([x, key]) => (
               <p className="v5-asset-row" key={x}>
                 <Image />
                 <span>
                   <b>{x}</b>
                   <small>Dapat diganti dari Media</small>
                 </span>
-                <label className="v9-file-button compact">Kelola<input type="file" accept="image/*" onChange={(event)=>void uploadAsset(key,event.target.files?.[0])}/></label>
+                <label className="v9-file-button compact">
+                  Kelola
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) =>
+                      void uploadAsset(key, event.target.files?.[0])
+                    }
+                  />
+                </label>
               </p>
             ))}
           </section>
@@ -246,7 +364,10 @@ export function ProgramsAdmin() {
 
   const selected = items.find((item) => item.slug === selectedSlug) ?? items[0];
 
-  const updateSelected = (field: keyof ProgramDraft, value: string | number) => {
+  const updateSelected = (
+    field: keyof ProgramDraft,
+    value: string | number,
+  ) => {
     setItems((current) =>
       current.map((item) =>
         item.slug === selectedSlug ? { ...item, [field]: value } : item,
@@ -271,11 +392,13 @@ export function ProgramsAdmin() {
       setSelectedSlug((current) =>
         payload.data?.some((item) => item.slug === current)
           ? current
-          : payload.data?.[0]?.slug ?? current,
+          : (payload.data?.[0]?.slug ?? current),
       );
       setStatus('Data terbaru berhasil dimuat dari penyimpanan pusat.');
     } catch {
-      setStatus('Penyimpanan pusat belum dapat dijangkau. Tidak ada data contoh yang ditampilkan.');
+      setStatus(
+        'Penyimpanan pusat belum dapat dijangkau. Tidak ada data contoh yang ditampilkan.',
+      );
     }
   };
 
@@ -293,20 +416,38 @@ export function ProgramsAdmin() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(selected),
       });
-      const payload = (await response.json()) as { ok: boolean; message?: string };
+      const payload = (await response.json()) as {
+        ok: boolean;
+        message?: string;
+      };
       if (!response.ok || !payload.ok) {
         throw new Error(payload.message ?? 'Pembaruan gagal disimpan.');
       }
       await loadPrograms();
       setStatus('Progres tersimpan dan langsung tersedia pada portal publik.');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Pembaruan gagal disimpan.');
+      setStatus(
+        error instanceof Error ? error.message : 'Pembaruan gagal disimpan.',
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (!selected) return <div className="v4-admin-content v7-program-admin"><Title title="Program Kerja" copy="Perbarui progres, indikator keberhasilan, catatan, dan publikasi media setiap program." action="Muat Ulang Data" onAction={() => void loadPrograms()} /><section className="v4-panel"><p className="v5-filter-empty">{status}</p></section></div>;
+  if (!selected)
+    return (
+      <div className="v4-admin-content v7-program-admin">
+        <Title
+          title="Program Kerja"
+          copy="Perbarui progres, indikator keberhasilan, catatan, dan publikasi media setiap program."
+          action="Muat Ulang Data"
+          onAction={() => void loadPrograms()}
+        />
+        <section className="v4-panel">
+          <p className="v5-filter-empty">{status}</p>
+        </section>
+      </div>
+    );
 
   return (
     <div className="v4-admin-content v7-program-admin">
@@ -321,56 +462,169 @@ export function ProgramsAdmin() {
         <ShieldCheck />
         <div>
           <b>Penyimpanan pusat aktif</b>
-          <p>Perubahan disimpan di Supabase dan ditampilkan kepada seluruh pengunjung setelah berhasil disimpan.</p>
+          <p>
+            Perubahan disimpan di Supabase dan ditampilkan kepada seluruh
+            pengunjung setelah berhasil disimpan.
+          </p>
         </div>
       </div>
       <div className="v7-program-layout">
         <aside className="v4-panel v7-program-list">
           <header>
-            <div><h2>Daftar Program</h2><p>Pilih program yang akan diperbarui.</p></div>
+            <div>
+              <h2>Daftar Program</h2>
+              <p>Pilih program yang akan diperbarui.</p>
+            </div>
           </header>
           {items.map((item) => (
             <button
               type="button"
               key={item.slug}
               className={item.slug === selectedSlug ? 'active' : ''}
-              onClick={() => { setSelectedSlug(item.slug); setStatus('Perubahan belum disimpan.'); }}
+              onClick={() => {
+                setSelectedSlug(item.slug);
+                setStatus('Perubahan belum disimpan.');
+              }}
             >
               <span style={{ backgroundImage: `url(${item.image})` }} />
-              <div><b>{item.title}</b><small>{item.unit} · Progres {item.progress}%</small></div>
+              <div>
+                <b>{item.title}</b>
+                <small>
+                  {item.unit} · Progres {item.progress}%
+                </small>
+              </div>
             </button>
           ))}
         </aside>
         <main className="v4-panel v5-admin-form v7-program-editor">
           <header>
-            <div><h2>Perbarui Program</h2><p>{selected.title}</p></div>
-            <Link href={`/program/${selected.slug}`} target="_blank"><SquareArrowOutUpRight /> Pratinjau Publik</Link>
+            <div>
+              <h2>Perbarui Program</h2>
+              <p>{selected.title}</p>
+            </div>
+            <Link href={`/program/${selected.slug}`} target="_blank">
+              <SquareArrowOutUpRight /> Pratinjau Publik
+            </Link>
           </header>
           <div className="v5-form-grid">
-            <label>Judul program<input value={selected.title} onChange={(event) => updateSelected('title', event.target.value)} /></label>
-            <label>Unit penanggung jawab<input value={selected.unit} onChange={(event) => updateSelected('unit', event.target.value)} /></label>
+            <label>
+              Judul program
+              <input
+                value={selected.title}
+                onChange={(event) =>
+                  updateSelected('title', event.target.value)
+                }
+              />
+            </label>
+            <label>
+              Unit penanggung jawab
+              <input
+                value={selected.unit}
+                onChange={(event) => updateSelected('unit', event.target.value)}
+              />
+            </label>
           </div>
-          <label>Ringkasan program<textarea value={selected.copy} onChange={(event) => updateSelected('copy', event.target.value)} /></label>
+          <label>
+            Ringkasan program
+            <textarea
+              value={selected.copy}
+              onChange={(event) => updateSelected('copy', event.target.value)}
+            />
+          </label>
           <div className="v7-progress-fields">
             <label>
-              <span>Persentase progres <b>{selected.progress}%</b></span>
-              <input type="range" min="0" max="100" value={selected.progress} onChange={(event) => updateSelected('progress', Number(event.target.value))} />
+              <span>
+                Persentase progres <b>{selected.progress}%</b>
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={selected.progress}
+                onChange={(event) =>
+                  updateSelected('progress', Number(event.target.value))
+                }
+              />
             </label>
             <label>
-              <span>Indikator keberhasilan <b>{selected.success}%</b></span>
-              <input type="range" min="0" max="100" value={selected.success} onChange={(event) => updateSelected('success', Number(event.target.value))} />
+              <span>
+                Indikator keberhasilan <b>{selected.success}%</b>
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={selected.success}
+                onChange={(event) =>
+                  updateSelected('success', Number(event.target.value))
+                }
+              />
             </label>
           </div>
-          <label>Catatan pembaruan<textarea value={selected.updateNote} onChange={(event) => updateSelected('updateNote', event.target.value)} placeholder="Jelaskan capaian, kendala, atau langkah berikutnya." /></label>
+          <label>
+            Catatan pembaruan
+            <textarea
+              value={selected.updateNote}
+              onChange={(event) =>
+                updateSelected('updateNote', event.target.value)
+              }
+              placeholder="Jelaskan capaian, kendala, atau langkah berikutnya."
+            />
+          </label>
           <div className="v5-form-grid">
-            <label>Jenis publikasi<select value={selected.media} onChange={(event) => updateSelected('media', event.target.value)}><option value="photo">Foto</option><option value="video">Video</option><option value="gallery">Galeri</option></select></label>
-            <label>URL foto/video<input value={selected.image} onChange={(event) => updateSelected('image', event.target.value)} placeholder="https://..." /></label>
+            <label>
+              Jenis publikasi
+              <select
+                value={selected.media}
+                onChange={(event) =>
+                  updateSelected('media', event.target.value)
+                }
+              >
+                <option value="photo">Foto</option>
+                <option value="video">Video</option>
+                <option value="gallery">Galeri</option>
+              </select>
+            </label>
+            <label>
+              URL foto/video
+              <input
+                value={selected.image}
+                onChange={(event) =>
+                  updateSelected('image', event.target.value)
+                }
+                placeholder="https://..."
+              />
+            </label>
           </div>
-          <div className="v7-media-preview"><span style={{ backgroundImage: `url(${selected.image})` }}><Images /></span><p><b>Pratinjau media</b><small>Gunakan URL gambar publik. Unggah file permanen akan tersedia setelah penyimpanan media terhubung.</small></p></div>
+          <div className="v7-media-preview">
+            <span style={{ backgroundImage: `url(${selected.image})` }}>
+              <Images />
+            </span>
+            <p>
+              <b>Pratinjau media</b>
+              <small>
+                Gunakan URL gambar publik. Unggah file permanen akan tersedia
+                setelah penyimpanan media terhubung.
+              </small>
+            </p>
+          </div>
           <footer className="v7-editor-actions">
             <p>{status}</p>
-            <button type="button" onClick={() => void loadPrograms()} disabled={isSaving}><History /> Muat Ulang Data</button>
-            <button type="button" className="primary" onClick={() => void saveProgram()} disabled={isSaving}><Save /> {isSaving ? 'Menyimpan…' : 'Perbarui Progres'}</button>
+            <button
+              type="button"
+              onClick={() => void loadPrograms()}
+              disabled={isSaving}
+            >
+              <History /> Muat Ulang Data
+            </button>
+            <button
+              type="button"
+              className="primary"
+              onClick={() => void saveProgram()}
+              disabled={isSaving}
+            >
+              <Save /> {isSaving ? 'Menyimpan…' : 'Perbarui Progres'}
+            </button>
           </footer>
         </main>
       </div>
@@ -380,9 +634,14 @@ export function ProgramsAdmin() {
 
 export function InsightAdmin() {
   const { data, loading, error } = useAdminPortal();
-  const studies = data.contents.filter((item) => ['d-sight', 'berita'].includes(item.content_type ?? ''));
+  const studies = data.contents.filter((item) =>
+    ['d-sight', 'berita'].includes(item.content_type ?? ''),
+  );
   const surveys = data.surveys;
-  const openEditor = (id?: string, type?: string) => location.assign(`/admin/cms?${new URLSearchParams({ ...(id ? { id } : {}), ...(type ? { type } : {}) })}`);
+  const openEditor = (id?: string, type?: string) =>
+    location.assign(
+      `/admin/cms?${new URLSearchParams({ ...(id ? { id } : {}), ...(type ? { type } : {}) })}`,
+    );
   return (
     <div className="v4-admin-content">
       <Title
@@ -391,7 +650,11 @@ export function InsightAdmin() {
         action="Buat Konten D-SIGHT"
         onAction={() => openEditor(undefined, 'd-sight')}
       />
-      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
+      {(loading || error) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error}
+        </p>
+      )}
       <div className="v4-admin-stats">
         <Metric
           icon={BarChart3}
@@ -399,11 +662,20 @@ export function InsightAdmin() {
           value={String(studies.filter((x) => x.status === 'published').length)}
           note="Data Supabase"
         />
-        <Metric icon={Vote} label="Survei Aktif" value={String(surveys.filter((x) => x.status === 'active').length)} note={`${surveys.reduce((sum, x) => sum + Number(x.response_count), 0)} respons`} />
+        <Metric
+          icon={Vote}
+          label="Survei Aktif"
+          value={String(surveys.filter((x) => x.status === 'active').length)}
+          note={`${surveys.reduce((sum, x) => sum + Number(x.response_count), 0)} respons`}
+        />
         <Metric
           icon={FileText}
           label="Berita Isu"
-          value={String(data.contents.filter((x) => x.content_type === 'berita' && x.status === 'published').length)}
+          value={String(
+            data.contents.filter(
+              (x) => x.content_type === 'berita' && x.status === 'published',
+            ).length,
+          )}
           note="Berita terbit"
         />
       </div>
@@ -414,7 +686,10 @@ export function InsightAdmin() {
               <h2>Daftar Kajian</h2>
               <p>Draft, review, dan publikasi kajian.</p>
             </div>
-            <button className="primary" onClick={() => openEditor(undefined, 'd-sight')}>
+            <button
+              className="primary"
+              onClick={() => openEditor(undefined, 'd-sight')}
+            >
               <Plus /> Tambah Kajian
             </button>
           </header>
@@ -424,19 +699,26 @@ export function InsightAdmin() {
                 <BarChart3 />
                 <span>
                   <b>{x.title}</b>
-                  <small>{x.status} · {x.unit_name ?? 'DPM FIPP'}</small>
+                  <small>
+                    {x.status} · {x.unit_name ?? 'DPM FIPP'}
+                  </small>
                 </span>
                 <button onClick={() => openEditor(x.id)}>Edit</button>
               </article>
             ))}
-            {!studies.length && <p className="v5-filter-empty">Belum ada kajian pada database.</p>}
+            {!studies.length && (
+              <p className="v5-filter-empty">Belum ada kajian pada database.</p>
+            )}
           </div>
         </section>
         <aside>
           <section className="v4-panel">
             <header>
               <h2>Survei Berjalan</h2>
-              <button className="primary" onClick={() => openEditor(undefined, 'survey')}>
+              <button
+                className="primary"
+                onClick={() => openEditor(undefined, 'survey')}
+              >
                 <Plus /> Buat Survei
               </button>
             </header>
@@ -446,12 +728,22 @@ export function InsightAdmin() {
                   <Vote />
                   <span>
                     <b>{x.title}</b>
-                    <small>{x.response_count} respons · {x.status}</small>
+                    <small>
+                      {x.response_count} respons · {x.status}
+                    </small>
                   </span>
-                  <button onClick={() => location.assign(`/admin/cms?survey=${x.id}`)}>Hasil</button>
+                  <button
+                    onClick={() => location.assign(`/admin/cms?survey=${x.id}`)}
+                  >
+                    Hasil
+                  </button>
                 </article>
               ))}
-              {!surveys.length && <p className="v5-filter-empty">Belum ada survei pada database.</p>}
+              {!surveys.length && (
+                <p className="v5-filter-empty">
+                  Belum ada survei pada database.
+                </p>
+              )}
             </div>
           </section>
         </aside>
@@ -462,8 +754,13 @@ export function InsightAdmin() {
 
 export function TraceAdmin() {
   const { data, loading, error } = useAdminPortal();
-  const records = data.contents.filter((item) => ['trace', 'd-trace', 'internal_publication'].includes(item.content_type ?? ''));
-  const edit = (id?: string) => location.assign(`/admin/cms?type=d-trace${id ? `&id=${id}` : ''}`);
+  const records = data.contents.filter((item) =>
+    ['trace', 'd-trace', 'internal_publication'].includes(
+      item.content_type ?? '',
+    ),
+  );
+  const edit = (id?: string) =>
+    location.assign(`/admin/cms?type=d-trace${id ? `&id=${id}` : ''}`);
   return (
     <div className="v4-admin-content">
       <Title
@@ -472,7 +769,11 @@ export function TraceAdmin() {
         action="Tambah Publikasi"
         onAction={() => edit()}
       />
-      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
+      {(loading || error) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error}
+        </p>
+      )}
       <div className="v5-admin-layout">
         <section className="v4-panel">
           <header>
@@ -490,12 +791,18 @@ export function TraceAdmin() {
                 <FileText />
                 <span>
                   <b>{x.title}</b>
-                  <small>{x.status} · {x.unit_name ?? 'DPM FIPP'}</small>
+                  <small>
+                    {x.status} · {x.unit_name ?? 'DPM FIPP'}
+                  </small>
                 </span>
                 <button onClick={() => edit(x.id)}>Edit</button>
               </article>
             ))}
-            {!records.length && <p className="v5-filter-empty">Belum ada publikasi D-TRACE pada database.</p>}
+            {!records.length && (
+              <p className="v5-filter-empty">
+                Belum ada publikasi D-TRACE pada database.
+              </p>
+            )}
           </div>
         </section>
         <aside>
@@ -512,14 +819,22 @@ export function TraceAdmin() {
             <label>
               Periode
               <select defaultValue={data.periods.find((x) => x.is_current)?.id}>
-                {data.periods.map((x) => <option value={x.id} key={x.id}>{x.name}</option>)}
+                {data.periods.map((x) => (
+                  <option value={x.id} key={x.id}>
+                    {x.name}
+                  </option>
+                ))}
               </select>
             </label>
             <label>
               Unit pemilik
               <select>
                 <option value="">Semua Unit DPM</option>
-                {data.units.map((x) => <option value={x.id} key={x.id}>{x.name}</option>)}
+                {data.units.map((x) => (
+                  <option value={x.id} key={x.id}>
+                    {x.name}
+                  </option>
+                ))}
               </select>
             </label>
             <label>
@@ -535,8 +850,11 @@ export function TraceAdmin() {
 
 export function ArchiveAdmin() {
   const { data, loading, error } = useAdminPortal();
-  const archives = data.contents.filter((item) => ['archive', 'd-dar', 'document'].includes(item.content_type ?? ''));
-  const edit = (id?: string) => location.assign(`/admin/cms?type=d-dar${id ? `&id=${id}` : ''}`);
+  const archives = data.contents.filter((item) =>
+    ['archive', 'd-dar', 'document'].includes(item.content_type ?? ''),
+  );
+  const edit = (id?: string) =>
+    location.assign(`/admin/cms?type=d-dar${id ? `&id=${id}` : ''}`);
   return (
     <div className="v4-admin-content">
       <Title
@@ -545,7 +863,11 @@ export function ArchiveAdmin() {
         action="Tambah Arsip"
         onAction={() => edit()}
       />
-      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
+      {(loading || error) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error}
+        </p>
+      )}
       <section className="v4-panel">
         <header>
           <div>
@@ -578,7 +900,9 @@ export function ArchiveAdmin() {
               <button onClick={() => edit(x.id)}>Edit</button>
             </p>
           ))}
-          {!archives.length && <p className="v5-filter-empty">Belum ada arsip pada database.</p>}
+          {!archives.length && (
+            <p className="v5-filter-empty">Belum ada arsip pada database.</p>
+          )}
         </div>
       </section>
     </div>
@@ -588,20 +912,42 @@ export function ArchiveAdmin() {
 export function NotificationsAdmin() {
   const { data, loading, error, message, runAction } = useAdminPortal();
   const unread = data.notifications.filter((item) => !item.read_at);
-  const storedPreferences = data.settings['notifications.preferences'] as Record<string, boolean> | undefined;
-  const preferenceLabels = ['Aspirasi prioritas','Permintaan approval','Konten menunggu review','Insiden layanan'];
+  const storedPreferences = data.settings['notifications.preferences'] as
+    | Record<string, boolean>
+    | undefined;
+  const preferenceLabels = [
+    'Aspirasi prioritas',
+    'Permintaan approval',
+    'Konten menunggu review',
+    'Insiden layanan',
+  ];
   const [preferences, setPreferences] = useState<Record<string, boolean>>({});
-  useEffect(() => { setPreferences(storedPreferences ?? Object.fromEntries(preferenceLabels.map((label) => [label,true]))); }, [JSON.stringify(storedPreferences)]);
+  useEffect(() => {
+    setPreferences(
+      storedPreferences ??
+        Object.fromEntries(preferenceLabels.map((label) => [label, true])),
+    );
+  }, [JSON.stringify(storedPreferences)]);
   return (
     <div className="v4-admin-content">
       <Title
         title="Notifikasi"
         copy="Kelola notifikasi in-app, template, preferensi, dan status pengiriman."
         action="Tandai Semua Dibaca"
-        onAction={() => void runAction('notification.mark_all_read', {}, 'Semua notifikasi ditandai dibaca.')}
+        onAction={() =>
+          void runAction(
+            'notification.mark_all_read',
+            {},
+            'Semua notifikasi ditandai dibaca.',
+          )
+        }
         actionDisabled={!unread.length}
       />
-      {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
+      {(loading || error || message) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error || message}
+        </p>
+      )}
       <div className="v4-admin-stats">
         <Metric
           icon={Bell}
@@ -612,10 +958,25 @@ export function NotificationsAdmin() {
         <Metric
           icon={Mail}
           label="Terkirim Hari Ini"
-          value={String(data.notifications.filter((x) => new Date(x.created_at).toDateString() === new Date().toDateString()).length)}
+          value={String(
+            data.notifications.filter(
+              (x) =>
+                new Date(x.created_at).toDateString() ===
+                new Date().toDateString(),
+            ).length,
+          )}
           note="Masuk hari ini"
         />
-        <Metric icon={Activity} label="Antrean" value={String(data.notifications.filter((x) => x.priority === 'high' && !x.read_at).length)} note="Prioritas tinggi" />
+        <Metric
+          icon={Activity}
+          label="Antrean"
+          value={String(
+            data.notifications.filter(
+              (x) => x.priority === 'high' && !x.read_at,
+            ).length,
+          )}
+          note="Prioritas tinggi"
+        />
       </div>
       <div className="v5-admin-layout">
         <section className="v4-panel">
@@ -628,12 +989,30 @@ export function NotificationsAdmin() {
                 <Bell />
                 <span>
                   <b>{x.title}</b>
-                  <small>{x.message_safe} · {x.priority}</small>
+                  <small>
+                    {x.message_safe} · {x.priority}
+                  </small>
                 </span>
-                {x.read_at ? <small>Dibaca</small> : <button onClick={() => void runAction('notification.mark_read', { id: x.id }, 'Notifikasi ditandai dibaca.')}>Tandai dibaca</button>}
+                {x.read_at ? (
+                  <small>Dibaca</small>
+                ) : (
+                  <button
+                    onClick={() =>
+                      void runAction(
+                        'notification.mark_read',
+                        { id: x.id },
+                        'Notifikasi ditandai dibaca.',
+                      )
+                    }
+                  >
+                    Tandai dibaca
+                  </button>
+                )}
               </article>
             ))}
-            {!data.notifications.length && <p className="v5-filter-empty">Belum ada notifikasi.</p>}
+            {!data.notifications.length && (
+              <p className="v5-filter-empty">Belum ada notifikasi.</p>
+            )}
           </div>
         </section>
         <aside>
@@ -643,7 +1022,25 @@ export function NotificationsAdmin() {
             </header>
             {preferenceLabels.map((x) => (
               <label key={x}>
-                <input type="checkbox" checked={preferences[x] ?? true} onChange={(event) => { const next={...preferences,[x]:event.target.checked};setPreferences(next);void runAction('setting.save',{namespace:'notifications',key:'preferences',value:next,isPublic:false},'Preferensi notifikasi berhasil disimpan.'); }} /> {x}
+                <input
+                  type="checkbox"
+                  checked={preferences[x] ?? true}
+                  onChange={(event) => {
+                    const next = { ...preferences, [x]: event.target.checked };
+                    setPreferences(next);
+                    void runAction(
+                      'setting.save',
+                      {
+                        namespace: 'notifications',
+                        key: 'preferences',
+                        value: next,
+                        isPublic: false,
+                      },
+                      'Preferensi notifikasi berhasil disimpan.',
+                    );
+                  }}
+                />{' '}
+                {x}
               </label>
             ))}
           </section>
@@ -655,15 +1052,26 @@ export function NotificationsAdmin() {
 
 export function OrganizationAdmin() {
   const { data, loading, error, message, runAction } = useAdminPortal();
-  const storedMembers = data.settings['site.organization_structure'] as OrganizationMember[] | undefined;
-  const storedAbout = data.settings['site.about'] as { description?:string } | undefined;
+  const storedMembers = data.settings['site.organization_structure'] as
+    | OrganizationMember[]
+    | undefined;
+  const storedAbout = data.settings['site.about'] as
+    | { description?: string }
+    | undefined;
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [about, setAbout] = useState('');
   const [saved, setSaved] = useState(false);
   const [ormawaPublish, setOrmawaPublish] = useState(true);
-  useEffect(() => { const savedPolicy=data.settings['organization.ormawa_self_publish']; if(typeof savedPolicy==='boolean') setOrmawaPublish(savedPolicy); }, [data.settings]);
-  useEffect(() => { if (storedMembers) setMembers(storedMembers); }, [JSON.stringify(storedMembers)]);
-  useEffect(() => { if (storedAbout?.description) setAbout(storedAbout.description); }, [storedAbout?.description]);
+  useEffect(() => {
+    const savedPolicy = data.settings['organization.ormawa_self_publish'];
+    if (typeof savedPolicy === 'boolean') setOrmawaPublish(savedPolicy);
+  }, [data.settings]);
+  useEffect(() => {
+    if (storedMembers) setMembers(storedMembers);
+  }, [JSON.stringify(storedMembers)]);
+  useEffect(() => {
+    if (storedAbout?.description) setAbout(storedAbout.description);
+  }, [storedAbout?.description]);
   const updateMember = (
     id: number,
     field: keyof OrganizationMember,
@@ -696,7 +1104,11 @@ export function OrganizationAdmin() {
         copy="Kelola halaman Tentang, struktur organisasi, periode, dan permintaan halaman ORMAWA tanpa coding."
         action=""
       />
-      {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
+      {(loading || error || message) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error || message}
+        </p>
+      )}
       <div className="v5-admin-layout">
         <main>
           <section className="v4-panel v5-admin-form">
@@ -706,15 +1118,41 @@ export function OrganizationAdmin() {
             </header>
             <label>
               Deskripsi DPM
-              <textarea value={about} onChange={(event) => { setAbout(event.target.value); setSaved(false); }} />
+              <textarea
+                value={about}
+                onChange={(event) => {
+                  setAbout(event.target.value);
+                  setSaved(false);
+                }}
+              />
             </label>
             <label>
               Periode Aktif
-              <select value={data.periods.find((item) => item.is_current)?.id ?? ''} disabled>
-                {data.periods.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
+              <select
+                value={data.periods.find((item) => item.is_current)?.id ?? ''}
+                disabled
+              >
+                {data.periods.map((item) => (
+                  <option value={item.id} key={item.id}>
+                    {item.name}
+                  </option>
+                ))}
               </select>
             </label>
-            <button onClick={() => void runAction('setting.save', { namespace:'site', key:'about', value:{ description:about }, isPublic:true }, 'Konten Tentang berhasil disimpan.')}>
+            <button
+              onClick={() =>
+                void runAction(
+                  'setting.save',
+                  {
+                    namespace: 'site',
+                    key: 'about',
+                    value: { description: about },
+                    isPublic: true,
+                  },
+                  'Konten Tentang berhasil disimpan.',
+                )
+              }
+            >
               <Save /> Simpan Konten Tentang
             </button>
           </section>
@@ -741,8 +1179,16 @@ export function OrganizationAdmin() {
                         onChange={(event) => {
                           const file = event.target.files?.[0];
                           if (file) {
-                            if (file.size > 2_000_000) return alert('Foto maksimal 2 MB.');
-                            const reader=new FileReader(); reader.onload=()=>updateMember(member.id,'image',String(reader.result)); reader.readAsDataURL(file);
+                            if (file.size > 2_000_000)
+                              return alert('Foto maksimal 2 MB.');
+                            const reader = new FileReader();
+                            reader.onload = () =>
+                              updateMember(
+                                member.id,
+                                'image',
+                                String(reader.result),
+                              );
+                            reader.readAsDataURL(file);
                           }
                         }}
                       />
@@ -797,19 +1243,56 @@ export function OrganizationAdmin() {
                   ? 'Perubahan struktur tersimpan.'
                   : `${members.length} pengurus siap ditampilkan pada halaman Tentang.`}
               </p>
-              <div className="v9-structure-button-stack"><button
-                className="primary"
-                type="button"
-                onClick={() => void runAction('setting.save', { namespace:'site', key:'organization_structure', value:members, isPublic:true }, 'Struktur organisasi berhasil disimpan.').then(() => setSaved(true))}
-              >
-                <Save /> Simpan Struktur
-              </button>
-              <button className="primary" type="button" onClick={() => void Promise.all([
-                runAction('setting.save', { namespace:'site', key:'about', value:{ description:about }, isPublic:true }, 'Konten organisasi berhasil disimpan.'),
-                runAction('setting.save', { namespace:'site', key:'organization_structure', value:members, isPublic:true }, 'Struktur organisasi berhasil disimpan.'),
-              ]).then(() => setSaved(true))}>
-                <Save /> Simpan Perubahan
-              </button></div>
+              <div className="v9-structure-button-stack">
+                <button
+                  className="primary"
+                  type="button"
+                  onClick={() =>
+                    void runAction(
+                      'setting.save',
+                      {
+                        namespace: 'site',
+                        key: 'organization_structure',
+                        value: members,
+                        isPublic: true,
+                      },
+                      'Struktur organisasi berhasil disimpan.',
+                    ).then(() => setSaved(true))
+                  }
+                >
+                  <Save /> Simpan Struktur
+                </button>
+                <button
+                  className="primary"
+                  type="button"
+                  onClick={() =>
+                    void Promise.all([
+                      runAction(
+                        'setting.save',
+                        {
+                          namespace: 'site',
+                          key: 'about',
+                          value: { description: about },
+                          isPublic: true,
+                        },
+                        'Konten organisasi berhasil disimpan.',
+                      ),
+                      runAction(
+                        'setting.save',
+                        {
+                          namespace: 'site',
+                          key: 'organization_structure',
+                          value: members,
+                          isPublic: true,
+                        },
+                        'Struktur organisasi berhasil disimpan.',
+                      ),
+                    ]).then(() => setSaved(true))
+                  }
+                >
+                  <Save /> Simpan Perubahan
+                </button>
+              </div>
             </footer>
           </section>
         </main>
@@ -829,12 +1312,24 @@ export function OrganizationAdmin() {
                   <Building2 />
                   <span>
                     <b>{x.short_name ?? x.name}</b>
-                    <small>{x.status === 'active' ? 'Halaman aktif' : x.status}</small>
+                    <small>
+                      {x.status === 'active' ? 'Halaman aktif' : x.status}
+                    </small>
                   </span>
-                  <button onClick={() => location.assign(`/admin/cms?organization=${x.id}`)}>Kelola</button>
+                  <button
+                    onClick={() =>
+                      location.assign(`/admin/cms?organization=${x.id}`)
+                    }
+                  >
+                    Kelola
+                  </button>
                 </article>
               ))}
-              {!data.organizations.length && <p className="v5-filter-empty">Belum ada ORMAWA pada database.</p>}
+              {!data.organizations.length && (
+                <p className="v5-filter-empty">
+                  Belum ada ORMAWA pada database.
+                </p>
+              )}
             </div>
           </section>
           <section className="v4-panel v5-admin-form">
@@ -852,8 +1347,24 @@ export function OrganizationAdmin() {
               </select>
             </label>
             <label>
-              <input type="checkbox" checked={ormawaPublish} onChange={(event) => { setOrmawaPublish(event.target.checked); void runAction('setting.save',{namespace:'organization',key:'ormawa_self_publish',value:event.target.checked,isPublic:false},'Kebijakan ORMAWA berhasil disimpan.'); }} /> ORMAWA dapat publish
-              halaman sendiri setelah halaman disetujui
+              <input
+                type="checkbox"
+                checked={ormawaPublish}
+                onChange={(event) => {
+                  setOrmawaPublish(event.target.checked);
+                  void runAction(
+                    'setting.save',
+                    {
+                      namespace: 'organization',
+                      key: 'ormawa_self_publish',
+                      value: event.target.checked,
+                      isPublic: false,
+                    },
+                    'Kebijakan ORMAWA berhasil disimpan.',
+                  );
+                }}
+              />{' '}
+              ORMAWA dapat publish halaman sendiri setelah halaman disetujui
             </label>
           </section>
         </aside>
@@ -865,9 +1376,22 @@ export function OrganizationAdmin() {
 export function PermissionAdmin() {
   const { data, loading, error, message, runAction, reload } = useAdminPortal();
   const [showCreate, setShowCreate] = useState(false);
-  const [newPermission, setNewPermission] = useState({ key:'', description:'' });
-  const roleKeys = ['super_admin', 'chairperson', 'secretary', 'dpm_unit', 'ormawa'];
-  const roleNames = roleKeys.map((key) => data.roles.find((role) => role.key === key)?.name ?? key.replaceAll('_', ' '));
+  const [newPermission, setNewPermission] = useState({
+    key: '',
+    description: '',
+  });
+  const roleKeys = [
+    'super_admin',
+    'chairperson',
+    'secretary',
+    'dpm_unit',
+    'ormawa',
+  ];
+  const roleNames = roleKeys.map(
+    (key) =>
+      data.roles.find((role) => role.key === key)?.name ??
+      key.replaceAll('_', ' '),
+  );
   return (
     <div className="v4-admin-content">
       <Title
@@ -876,24 +1400,66 @@ export function PermissionAdmin() {
         action="Muat Ulang"
         onAction={() => void reload()}
       />
-      {(loading || error || message) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error || message}</p>}
+      {(loading || error || message) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error || message}
+        </p>
+      )}
       <section className="v4-panel v5-permission">
         <header>
           <div>
             <h2>Permission Matrix</h2>
             <p>Explicit deny selalu mengalahkan allow.</p>
           </div>
-          <button className="primary" onClick={() => setShowCreate((value) => !value)}>
+          <button
+            className="primary"
+            onClick={() => setShowCreate((value) => !value)}
+          >
             <Plus /> Tambah Permission
           </button>
         </header>
-        {showCreate && <div className="v9-permission-create">
-          <input value={newPermission.key} onChange={(event) => setNewPermission((value) => ({ ...value, key:event.target.value }))} placeholder="contoh: media.asset.update" />
-          <input value={newPermission.description} onChange={(event) => setNewPermission((value) => ({ ...value, description:event.target.value }))} placeholder="Deskripsi permission" />
-          <button className="primary" disabled={!newPermission.key || !newPermission.description} onClick={() => { const [resource='', action=''] = newPermission.key.split('.'); void runAction('permission.create', { ...newPermission, resource, action, scopeKind:'all' }, 'Permission berhasil ditambahkan.').then(() => { setNewPermission({ key:'', description:'' }); setShowCreate(false); }); }}>
-            <Plus /> Simpan Permission
-          </button>
-        </div>}
+        {showCreate && (
+          <div className="v9-permission-create">
+            <input
+              value={newPermission.key}
+              onChange={(event) =>
+                setNewPermission((value) => ({
+                  ...value,
+                  key: event.target.value,
+                }))
+              }
+              placeholder="contoh: media.asset.update"
+            />
+            <input
+              value={newPermission.description}
+              onChange={(event) =>
+                setNewPermission((value) => ({
+                  ...value,
+                  description: event.target.value,
+                }))
+              }
+              placeholder="Deskripsi permission"
+            />
+            <button
+              className="primary"
+              disabled={!newPermission.key || !newPermission.description}
+              onClick={() => {
+                const [resource = '', action = ''] =
+                  newPermission.key.split('.');
+                void runAction(
+                  'permission.create',
+                  { ...newPermission, resource, action, scopeKind: 'all' },
+                  'Permission berhasil ditambahkan.',
+                ).then(() => {
+                  setNewPermission({ key: '', description: '' });
+                  setShowCreate(false);
+                });
+              }}
+            >
+              <Plus /> Simpan Permission
+            </button>
+          </div>
+        )}
         <div>
           <b>Permission</b>
           {roleNames.map((x) => (
@@ -909,7 +1475,17 @@ export function PermissionAdmin() {
                 <input
                   type="checkbox"
                   checked={Boolean(permission.roles?.[roleKey])}
-                  onChange={(event) => void runAction('permission.set', { permissionKey: permission.key, roleKey, allowed: event.target.checked }, 'Permission berhasil diperbarui.')}
+                  onChange={(event) =>
+                    void runAction(
+                      'permission.set',
+                      {
+                        permissionKey: permission.key,
+                        roleKey,
+                        allowed: event.target.checked,
+                      },
+                      'Permission berhasil diperbarui.',
+                    )
+                  }
                 />
               </label>
             )),
@@ -923,11 +1499,40 @@ export function PermissionAdmin() {
 export function AuditAdmin() {
   const { data, loading, error } = useAdminPortal();
   const [query, setQuery] = useState('');
-  const records = data.audit.filter((item) => `${item.actor_name ?? item.actor_type} ${item.action} ${item.target_type} ${item.result}`.toLowerCase().includes(query.toLowerCase()));
+  const records = data.audit.filter((item) =>
+    `${item.actor_name ?? item.actor_type} ${item.action} ${item.target_type} ${item.result}`
+      .toLowerCase()
+      .includes(query.toLowerCase()),
+  );
   const exportAudit = () => {
-    const rows = [['Waktu','Aktor','Aksi','Target','Hasil','Alasan'], ...records.map((x) => [x.occurred_at,x.actor_name ?? x.actor_type,x.action,x.target_type,x.result,x.reason ?? ''])];
-    const blob = new Blob([rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"','""')}"`).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
-    const link = document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=`audit-${new Date().toISOString().slice(0,10)}.csv`; link.click(); URL.revokeObjectURL(link.href);
+    const rows = [
+      ['Waktu', 'Aktor', 'Aksi', 'Target', 'Hasil', 'Alasan'],
+      ...records.map((x) => [
+        x.occurred_at,
+        x.actor_name ?? x.actor_type,
+        x.action,
+        x.target_type,
+        x.result,
+        x.reason ?? '',
+      ]),
+    ];
+    const blob = new Blob(
+      [
+        rows
+          .map((row) =>
+            row
+              .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
+              .join(','),
+          )
+          .join('\n'),
+      ],
+      { type: 'text/csv;charset=utf-8' },
+    );
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `audit-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
   };
   return (
     <div className="v4-admin-content">
@@ -937,12 +1542,20 @@ export function AuditAdmin() {
         action="Ekspor Audit"
         onAction={exportAudit}
       />
-      {(loading || error) && <p className="v5-admin-message">{loading ? 'Memuat data Supabase…' : error}</p>}
+      {(loading || error) && (
+        <p className="v5-admin-message">
+          {loading ? 'Memuat data Supabase…' : error}
+        </p>
+      )}
       <div className="v4-admin-stats">
         <Metric
           icon={History}
           label="Event 24 Jam"
-          value={String(data.audit.filter((x) => Date.now() - new Date(x.occurred_at).getTime() <= 86400000).length)}
+          value={String(
+            data.audit.filter(
+              (x) => Date.now() - new Date(x.occurred_at).getTime() <= 86400000,
+            ).length,
+          )}
           note="Semua layanan"
         />
         <Metric
@@ -954,7 +1567,10 @@ export function AuditAdmin() {
         <Metric
           icon={LockKeyhole}
           label="Akses Ditolak"
-          value={String(data.audit.filter((x) => x.result.toLowerCase().includes('den')).length)}
+          value={String(
+            data.audit.filter((x) => x.result.toLowerCase().includes('den'))
+              .length,
+          )}
           note="Diblokir kebijakan"
         />
       </div>
@@ -966,22 +1582,52 @@ export function AuditAdmin() {
           </div>
           <label className="v5-audit-search">
             <Search />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari actor, aksi, atau target..." />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Cari actor, aksi, atau target..."
+            />
           </label>
         </header>
         <div className="v5-audit-list">
           {records.map((x) => (
             <article key={x.id}>
-              <span className={x.result.toLowerCase().includes('den') ? 'deny' : 'ok'}>{x.result}</span>
+              <span
+                className={
+                  x.result.toLowerCase().includes('den') ? 'deny' : 'ok'
+                }
+              >
+                {x.result}
+              </span>
               <div>
                 <b>{x.action}</b>
-                <small>{x.actor_name ?? x.actor_type} · {x.target_type}</small>
+                <small>
+                  {x.actor_name ?? x.actor_type} · {x.target_type}
+                </small>
               </div>
-              <time>{new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(x.occurred_at))}</time>
-              <button onClick={() => alert(x.reason || 'Tidak ada detail tambahan yang aman ditampilkan.')}>Detail</button>
+              <time>
+                {new Intl.DateTimeFormat('id-ID', {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                }).format(new Date(x.occurred_at))}
+              </time>
+              <button
+                onClick={() =>
+                  alert(
+                    x.reason ||
+                      'Tidak ada detail tambahan yang aman ditampilkan.',
+                  )
+                }
+              >
+                Detail
+              </button>
             </article>
           ))}
-          {!records.length && <p className="v5-filter-empty">Tidak ada event audit yang sesuai.</p>}
+          {!records.length && (
+            <p className="v5-filter-empty">
+              Tidak ada event audit yang sesuai.
+            </p>
+          )}
         </div>
       </section>
     </div>

@@ -19,7 +19,7 @@ export function PublicComments({ slug }: { slug: string }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [status, setStatus] = useState('Memuat diskusi…');
   const [error, setError] = useState('');
-  const [sending,setSending]=useState(false);
+  const [sending, setSending] = useState(false);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [replyTo, setReplyTo] = useState<string | null>(null);
   async function load() {
@@ -63,7 +63,11 @@ export function PublicComments({ slug }: { slug: string }) {
       </p>
       {receipt && (
         <div className="comment-receipt" role="status">
-          <b>Komentar tersimpan dan akan tampil setelah penyaringan. Simpan ID serta kode hapus ini.</b><code>{receipt.commentId}</code>
+          <b>
+            Komentar tersimpan dan akan tampil setelah penyaringan. Simpan ID
+            serta kode hapus ini.
+          </b>
+          <code>{receipt.commentId}</code>
           <code>{receipt.deletionSecret}</code>
           <button
             type="button"
@@ -137,7 +141,8 @@ export function PublicComments({ slug }: { slug: string }) {
         className="comment-form"
         onSubmit={async (event) => {
           event.preventDefault();
-          setError('');setSending(true);
+          setError('');
+          setSending(true);
           const form = event.currentTarget;
           const data = new FormData(form);
           try {
@@ -170,7 +175,9 @@ export function PublicComments({ slug }: { slug: string }) {
                 ? reason.message
                 : 'Komentar belum terkirim.',
             );
-          }finally{setSending(false)}
+          } finally {
+            setSending(false);
+          }
         }}
       >
         <div className="comment-form-title">
@@ -219,7 +226,7 @@ export function PublicComments({ slug }: { slug: string }) {
         </div>
         <button className="native-button" type="submit" disabled={sending}>
           <Send />
-          {sending?'Mengirim…':'Kirim komentar'}
+          {sending ? 'Mengirim…' : 'Kirim komentar'}
         </button>
       </form>
       <details className="comment-delete">

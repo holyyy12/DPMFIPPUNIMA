@@ -25,7 +25,7 @@ import { usePublicPortal } from './use-public-portal';
 import { formatPublicDate, publicAssetUrl } from '@/lib/public-portal';
 import { type } from 'os';
 
-const campusHero='/fipp-campus-hero.png';
+const campusHero = '/fipp-campus-hero.png';
 
 export function PublicFrame({ children }: { children: React.ReactNode }) {
   return (
@@ -55,33 +55,68 @@ export function PublicFrame({ children }: { children: React.ReactNode }) {
 }
 
 export function V4Home() {
-  const {data,loading,error}=usePublicPortal();
-  const savedHome=(data.settings['site.home']??data.settings['site_content.home_hero']??{}) as Partial<{title:string;subtitle:string;paragraph:string;image:string;cta1:string;cta1Href:string;cta2:string;cta2Href:string}>;
-  const latestNews=data.contents.filter((item)=>item.content_type==='berita').slice(0,3);
-  const studies=data.contents.filter((item)=>item.content_type==='d-sight').slice(0,3);
-  const surveys=data.surveys.slice(0,2);
+  const { data, loading, error } = usePublicPortal();
+  const savedHome = (data.settings['site.home'] ??
+    data.settings['site_content.home_hero'] ??
+    {}) as Partial<{
+    title: string;
+    subtitle: string;
+    paragraph: string;
+    image: string;
+    cta1: string;
+    cta1Href: string;
+    cta2: string;
+    cta2Href: string;
+  }>;
+  const latestNews = data.contents
+    .filter((item) => item.content_type === 'berita')
+    .slice(0, 3);
+  const studies = data.contents
+    .filter((item) => item.content_type === 'd-sight')
+    .slice(0, 3);
+  const surveys = data.surveys.slice(0, 2);
   return (
     <PublicFrame>
       <section
         className="v5-home-hero"
-        style={{ '--campus': `url(${savedHome.image??campusHero})` } as React.CSSProperties}
+        style={
+          {
+            '--campus': `url(${savedHome.image ?? campusHero})`,
+          } as React.CSSProperties
+        }
       >
         <div className="v5-shell">
           <div className="v5-hero-copy">
-            <h2>{savedHome.subtitle??'Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.'}</h2>
-            <p>{savedHome.paragraph??'DPM FIPP UNIMA hadir sebagai jembatan komunikasi antara mahasiswa dan fakultas untuk mendorong perubahan, transparansi, dan kemajuan bersama.'}</p>
+            <h2>
+              {savedHome.subtitle ??
+                'Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.'}
+            </h2>
+            <p>
+              {savedHome.paragraph ??
+                'DPM FIPP UNIMA hadir sebagai jembatan komunikasi antara mahasiswa dan fakultas untuk mendorong perubahan, transparansi, dan kemajuan bersama.'}
+            </p>
             <div>
-              <Link className="v6-cta v6-cta-secondary" href={savedHome.cta1Href??'/tentang'}>
-                <ShieldCheck /> {savedHome.cta1??'Jelajahi DPM'}
+              <Link
+                className="v6-cta v6-cta-secondary"
+                href={savedHome.cta1Href ?? '/tentang'}
+              >
+                <ShieldCheck /> {savedHome.cta1 ?? 'Jelajahi DPM'}
               </Link>
-              <Link className="v6-cta v6-cta-primary" href={savedHome.cta2Href??'/ddas'}>
-                <Send /> {savedHome.cta2??'Kirim Aspirasi'}
+              <Link
+                className="v6-cta v6-cta-primary"
+                href={savedHome.cta2Href ?? '/ddas'}
+              >
+                <Send /> {savedHome.cta2 ?? 'Kirim Aspirasi'}
               </Link>
             </div>
           </div>
         </div>
       </section>
-      {(loading||error)&&<p className="v5-shell v5-filter-empty">{loading?'Jaringanmu Lamban, Tunggu Sebentar...':error}</p>}
+      {(loading || error) && (
+        <p className="v5-shell v5-filter-empty">
+          {loading ? 'Jaringanmu Lamban, Tunggu Sebentar...' : error}
+        </p>
+      )}
       <section className="v5-shell v5-home-cards">
         <article>
           <header>
@@ -97,7 +132,9 @@ export function V4Home() {
                 <img src={publicAssetUrl(item)} alt="" />
                 <span>
                   <b>{item.title}</b>
-                  <small>{formatPublicDate(item.published_at??item.updated_at)}</small>
+                  <small>
+                    {formatPublicDate(item.published_at ?? item.updated_at)}
+                  </small>
                 </span>
               </Link>
             ))}
@@ -150,7 +187,9 @@ export function V4Home() {
                 <FileText />
                 <span>
                   <b>{x.title}</b>
-                  <small>{formatPublicDate(x.published_at??x.updated_at)}</small>
+                  <small>
+                    {formatPublicDate(x.published_at ?? x.updated_at)}
+                  </small>
                 </span>
               </p>
             ))}
@@ -169,9 +208,36 @@ export function V4Home() {
             <h2>D-SIGHT Survei</h2>
           </header>
           <div className="v5-survey-card">
-            <b>{surveys.length?'Isu prioritas mahasiswa':'Belum ada survei aktif'}</b>
-            {(surveys.length?surveys:[{id:'empty',title:'Belum ada data survei',responseCount:0}]).map((survey)=><div key={survey.id}><p>{survey.title}</p><div><i style={{width:'0%'}}/><span>0%</span></div></div>)}
-            <small>{surveys.reduce((sum,item)=>sum+Number(item.responseCount),0)} respons masuk · hasil sementara</small>
+            <b>
+              {surveys.length
+                ? 'Isu prioritas mahasiswa'
+                : 'Belum ada survei aktif'}
+            </b>
+            {(surveys.length
+              ? surveys
+              : [
+                  {
+                    id: 'empty',
+                    title: 'Belum ada data survei',
+                    responseCount: 0,
+                  },
+                ]
+            ).map((survey) => (
+              <div key={survey.id}>
+                <p>{survey.title}</p>
+                <div>
+                  <i style={{ width: '0%' }} />
+                  <span>0%</span>
+                </div>
+              </div>
+            ))}
+            <small>
+              {surveys.reduce(
+                (sum, item) => sum + Number(item.responseCount),
+                0,
+              )}{' '}
+              respons masuk · hasil sementara
+            </small>
           </div>
           <footer>
             <Link href="/d-sight?tab=survei">
@@ -197,7 +263,7 @@ export function V4Home() {
                 key={x.slug}
                 style={{ background: '#075d46' }}
               >
-                {x.shortName??x.name.slice(0,4)}
+                {x.shortName ?? x.name.slice(0, 4)}
               </Link>
             ))}
           </div>
@@ -213,9 +279,20 @@ export function V4Home() {
 }
 
 export function V4About() {
-  const {data,loading,error}=usePublicPortal();
-  const about=data.settings['site.about'] as {description?:string}|undefined;
-  const organizationMembers=(data.settings['site.organization_structure'] as Array<{id?:number;role:string;name:string;unit:string;image?:string}>|undefined)??[];
+  const { data, loading, error } = usePublicPortal();
+  const about = data.settings['site.about'] as
+    | { description?: string }
+    | undefined;
+  const organizationMembers =
+    (data.settings['site.organization_structure'] as
+      | Array<{
+          id?: number;
+          role: string;
+          name: string;
+          unit: string;
+          image?: string;
+        }>
+      | undefined) ?? [];
   return (
     <PublicFrame>
       <section
@@ -226,28 +303,37 @@ export function V4About() {
           <small>Beranda › Tentang</small>
           <h1>Tentang DPM FIPP UNIMA</h1>
           <h2>Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.</h2>
-       
-          <p>{about?.description??'Informasi Tentang DPM belum diisi melalui Portal Admin.'}</p>
+
+          <p>
+            {about?.description ??
+              'Informasi Tentang DPM belum diisi melalui Portal Admin.'}
+          </p>
           <div className="v4-period">
             <span>
               Dewan Perwakilan<b>Mahasiswa</b>
             </span>
             <span>
-              Periode Aktif<b>{data.period.name??'Belum diatur'}</b>
+              Periode Aktif<b>{data.period.name ?? 'Belum diatur'}</b>
             </span>
           </div>
         </div>
       </section>
-      {(loading||error)&&<p className="v5-shell v5-filter-empty">{loading?'Memuat data publik…':error}</p>}
+      {(loading || error) && (
+        <p className="v5-shell v5-filter-empty">
+          {loading ? 'Memuat data publik…' : error}
+        </p>
+      )}
       <section className="v5-shell v5-org">
         <header>
           <h2>Struktur Organisasi DPM FIPP UNIMA</h2>
-          
         </header>
         <div className="v6-org-people">
           {organizationMembers.map((person, index) => (
             <article className={index < 2 ? 'leader' : ''} key={person.role}>
-              <img src={person.image??'/dpm-crest.png'} alt={`Foto ${person.name}`} />
+              <img
+                src={person.image ?? '/dpm-crest.png'}
+                alt={`Foto ${person.name}`}
+              />
               <span>
                 <small>{person.role}</small>
                 <b>{person.name}</b>
@@ -260,9 +346,7 @@ export function V4About() {
           <div>
             <span>ORMAWA FIPP</span>
             <h2>Kenali organisasi mahasiswa di lingkungan FIPP.</h2>
-            <p>
-              
-            </p>
+            <p></p>
             <Link href="/ormawa">
               Lihat Daftar ORMAWA <ArrowRight />
             </Link>
@@ -274,7 +358,7 @@ export function V4About() {
                 key={x.slug}
                 style={{ background: '#075d46' }}
               >
-                {x.shortName??x.name.slice(0,4)}
+                {x.shortName ?? x.name.slice(0, 4)}
               </Link>
             ))}
           </div>
@@ -285,23 +369,35 @@ export function V4About() {
 }
 
 export function V4Publications() {
-  const {data,loading,error}=usePublicPortal();
+  const { data, loading, error } = usePublicPortal();
   const [type, setType] = useState('Semua');
-  const [unit,setUnit]=useState('Semua');
-  const [sort,setSort]=useState('Terbaru');
+  const [unit, setUnit] = useState('Semua');
+  const [sort, setSort] = useState('Terbaru');
   const [query, setQuery] = useState('');
-  const publications=data.contents.filter((item)=>!['program','page'].includes(item.content_type??''));
+  const publications = data.contents.filter(
+    (item) => !['program', 'page'].includes(item.content_type ?? ''),
+  );
   const filtered = useMemo(
     () =>
-      publications.filter(
-        (item) =>
-          (type === 'Semua' || item.content_type === type) &&
-          (unit==='Semua'||item.unit_name===unit)&&
-          `${item.content_type} ${item.title} ${item.summary}`
-            .toLowerCase()
-            .includes(query.toLowerCase()),
-      ).sort((a,b)=>sort==='A–Z'?a.title.localeCompare(b.title):sort==='Terlama'?new Date(a.published_at??a.updated_at).getTime()-new Date(b.published_at??b.updated_at).getTime():new Date(b.published_at??b.updated_at).getTime()-new Date(a.published_at??a.updated_at).getTime()),
-    [publications,type,unit,sort,query],
+      publications
+        .filter(
+          (item) =>
+            (type === 'Semua' || item.content_type === type) &&
+            (unit === 'Semua' || item.unit_name === unit) &&
+            `${item.content_type} ${item.title} ${item.summary}`
+              .toLowerCase()
+              .includes(query.toLowerCase()),
+        )
+        .sort((a, b) =>
+          sort === 'A–Z'
+            ? a.title.localeCompare(b.title)
+            : sort === 'Terlama'
+              ? new Date(a.published_at ?? a.updated_at).getTime() -
+                new Date(b.published_at ?? b.updated_at).getTime()
+              : new Date(b.published_at ?? b.updated_at).getTime() -
+                new Date(a.published_at ?? a.updated_at).getTime(),
+        ),
+    [publications, type, unit, sort, query],
   );
   return (
     <PublicFrame>
@@ -318,7 +414,11 @@ export function V4Publications() {
           </p>
         </div>
       </section>
-      {(loading||error)&&<p className="v5-shell v5-filter-empty">{loading?'Memuat data publik…':error}</p>}
+      {(loading || error) && (
+        <p className="v5-shell v5-filter-empty">
+          {loading ? 'Memuat data publik…' : error}
+        </p>
+      )}
       <section className="v5-shell">
         <div className="v4-pub-filters">
           <label>
@@ -328,34 +428,61 @@ export function V4Publications() {
               onChange={(event) => setType(event.target.value)}
             >
               <option>Semua</option>
-              {[...new Set(publications.map((item) => item.content_type).filter(Boolean))].map((item) => (
+              {[
+                ...new Set(
+                  publications.map((item) => item.content_type).filter(Boolean),
+                ),
+              ].map((item) => (
                 <option key={item}>{item}</option>
               ))}
             </select>
           </label>
           <label>
             <span>Kategori</span>
-            <select value={type} onChange={(event)=>setType(event.target.value)}>
+            <select
+              value={type}
+              onChange={(event) => setType(event.target.value)}
+            >
               <option value="Semua">Semua Kategori</option>
-              {[...new Set(publications.map((item)=>item.content_type).filter(Boolean))].map((item)=><option key={item}>{item}</option>)}
+              {[
+                ...new Set(
+                  publications.map((item) => item.content_type).filter(Boolean),
+                ),
+              ].map((item) => (
+                <option key={item}>{item}</option>
+              ))}
             </select>
           </label>
           <label>
             <span>Unit</span>
-            <select value={unit} onChange={(event)=>setUnit(event.target.value)}>
+            <select
+              value={unit}
+              onChange={(event) => setUnit(event.target.value)}
+            >
               <option>Semua Unit</option>
-              {[...new Set(publications.map((item)=>item.unit_name).filter(Boolean))].map((item)=><option key={item}>{item}</option>)}
+              {[
+                ...new Set(
+                  publications.map((item) => item.unit_name).filter(Boolean),
+                ),
+              ].map((item) => (
+                <option key={item}>{item}</option>
+              ))}
             </select>
           </label>
           <label>
             <span>Periode</span>
-            <select value={data.period.id??''} disabled>
-              <option value={data.period.id??''}>{data.period.name??'Belum ada periode'}</option>
+            <select value={data.period.id ?? ''} disabled>
+              <option value={data.period.id ?? ''}>
+                {data.period.name ?? 'Belum ada periode'}
+              </option>
             </select>
           </label>
           <label>
             <span>Sortir</span>
-            <select value={sort} onChange={(event)=>setSort(event.target.value)}>
+            <select
+              value={sort}
+              onChange={(event) => setSort(event.target.value)}
+            >
               <option>Terbaru</option>
               <option>Terlama</option>
               <option>A–Z</option>
@@ -376,7 +503,7 @@ export function V4Publications() {
               <div style={{ backgroundImage: `url(${publicAssetUrl(p)})` }}>
                 <span>{p.content_type?.toUpperCase()}</span>
               </div>
-              <small>{formatPublicDate(p.published_at??p.updated_at)}</small>
+              <small>{formatPublicDate(p.published_at ?? p.updated_at)}</small>
               <h2>{p.title}</h2>
               <p>{p.summary}</p>
               <Link href={`/berita/${p.slug}`}>
@@ -394,23 +521,53 @@ export function V4Publications() {
     </PublicFrame>
   );
 }
-export function V4PublicationDetail({slug}:{slug:string}) {
-  const {data,loading,error}=usePublicPortal();
-  const article=data.contents.find((item)=>item.slug===slug);
-  const related=data.contents.filter((item)=>item.content_type==='berita'&&item.id!==article?.id).slice(0,3);
+export function V4PublicationDetail({ slug }: { slug: string }) {
+  const { data, loading, error } = usePublicPortal();
+  const article = data.contents.find((item) => item.slug === slug);
+  const related = data.contents
+    .filter((item) => item.content_type === 'berita' && item.id !== article?.id)
+    .slice(0, 3);
   return (
     <PublicFrame>
       <section className="v5-shell v4-article-layout">
         <article>
           <div
             className="v4-article-image"
-            style={{ backgroundImage: `url(${article?publicAssetUrl(article):campusHero})` }}
+            style={{
+              backgroundImage: `url(${article ? publicAssetUrl(article) : campusHero})`,
+            }}
           />
-          <span className="v4-tag">{article?.content_type?.toUpperCase()??'BERITA'}</span>
-          <h1>{article?.title??(loading?'Memuat publikasi…':'Publikasi tidak ditemukan')}</h1>
-          <small>DPM FIPP UNIMA · {formatPublicDate(article?.published_at??article?.updated_at)}</small>
-          <p>{article?.summary??error??'Konten ini belum tersedia pada database.'}</p>
-          {article&&<>{((article.body as {blocks?:{text?:string}[]})?.blocks??[]).filter(b=>b.text&&b.text!==article.summary).map((b,i)=><p key={i} style={{whiteSpace:'pre-wrap'}}>{b.text}</p>)}<ContentGallery items={contentMedia(article)}/><PublicComments slug={article.slug} /></>}
+          <span className="v4-tag">
+            {article?.content_type?.toUpperCase() ?? 'BERITA'}
+          </span>
+          <h1>
+            {article?.title ??
+              (loading ? 'Memuat publikasi…' : 'Publikasi tidak ditemukan')}
+          </h1>
+          <small>
+            DPM FIPP UNIMA ·{' '}
+            {formatPublicDate(article?.published_at ?? article?.updated_at)}
+          </small>
+          <p>
+            {article?.summary ??
+              error ??
+              'Konten ini belum tersedia pada database.'}
+          </p>
+          {article && (
+            <>
+              {(
+                (article.body as { blocks?: { text?: string }[] })?.blocks ?? []
+              )
+                .filter((b) => b.text && b.text !== article.summary)
+                .map((b, i) => (
+                  <p key={i} style={{ whiteSpace: 'pre-wrap' }}>
+                    {b.text}
+                  </p>
+                ))}
+              <ContentGallery items={contentMedia(article)} />
+              <PublicComments slug={article.slug} />
+            </>
+          )}
         </article>
         <aside>
           <h3>Berita Terkait</h3>

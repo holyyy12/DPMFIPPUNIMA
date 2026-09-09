@@ -5,11 +5,22 @@ export function supabaseConfig() {
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const expected = process.env.EXPECTED_SUPABASE_PROJECT_REF;
   const actual = /^https:\/\/([a-z0-9-]+)\.supabase\.co$/i.exec(url ?? '')?.[1];
-  if (!url || !anon || !expected || actual !== expected || /YOUR_NEW_PROJECT|SET_IN_SECRET/.test(`${url}${anon}${expected}`)) throw new Error('BACKEND_NOT_CONFIGURED');
+  if (
+    !url ||
+    !anon ||
+    !expected ||
+    actual !== expected ||
+    /YOUR_NEW_PROJECT|SET_IN_SECRET/.test(`${url}${anon}${expected}`)
+  )
+    throw new Error('BACKEND_NOT_CONFIGURED');
   return { url, anon };
 }
 
-export async function supabaseRequest<T>(path: string, init: RequestInit = {}, options: RequestOptions = {}) {
+export async function supabaseRequest<T>(
+  path: string,
+  init: RequestInit = {},
+  options: RequestOptions = {},
+) {
   const { url, anon } = supabaseConfig();
   const requestHeaders = new Headers(init.headers);
   requestHeaders.set('apikey', anon);
@@ -25,11 +36,20 @@ export async function supabaseRequest<T>(path: string, init: RequestInit = {}, o
   return response.json() as Promise<T>;
 }
 
-export async function supabaseRpc<T>(name: string, payload: Record<string, unknown>, options: RequestOptions = {}) {
+export async function supabaseRpc<T>(
+  name: string,
+  payload: Record<string, unknown>,
+  options: RequestOptions = {},
+) {
   const { url, anon } = supabaseConfig();
   const response = await fetch(`${url}/rest/v1/rpc/${name}`, {
     method: 'POST',
-    headers: { apikey: anon, Authorization: `Bearer ${options.accessToken ?? anon}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: {
+      apikey: anon,
+      Authorization: `Bearer ${options.accessToken ?? anon}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
     body: JSON.stringify(payload),
     cache: options.noStore ? 'no-store' : 'default',
   });

@@ -1,2 +1,4 @@
 import { MediaAdminRework } from '@/components/admin-rework';
-export default function Page(){return <MediaAdminRework/>}
+export default function Page() {
+  return <MediaAdminRework />;
+}

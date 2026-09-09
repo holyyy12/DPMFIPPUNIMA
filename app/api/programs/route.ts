@@ -13,6 +13,14 @@ type PublishedProgramRow = {
       unit?: string;
       media?: string;
       image?: string;
+      documentation?: {
+        url: string;
+        name: string;
+        mimeType?: string;
+        assetId?: string;
+      }[];
+      continuityIndicator?: string;
+      successIndicator?: string;
     };
   } | null;
 };
@@ -31,7 +39,19 @@ const updateSchema = z.object({
   copy: z.string().trim().min(10).max(1200),
   unit: z.string().trim().min(2).max(120),
   media: z.enum(['photo', 'video', 'gallery']),
-  image: z.string().url().max(2000),
+  image: z.string().max(3000),
+  documentation: z
+    .array(
+      z.object({
+        url: z.string().url().max(3000),
+        name: z.string().max(255),
+        mimeType: z.string().max(120).optional(),
+        assetId: z.string().uuid().optional(),
+      }),
+    )
+    .max(5),
+  continuityIndicator: z.string().trim().max(500),
+  successIndicator: z.string().trim().max(500),
   progress: z.number().int().min(0).max(100),
   success: z.number().int().min(0).max(100),
   updateNote: z.string().trim().min(3).max(2000),
@@ -69,6 +89,13 @@ export async function GET() {
         unit: metadata?.unit ?? 'DPM FIPP',
         media: metadata?.media ?? 'photo',
         image: metadata?.image ?? '/fipp-campus-hero.png',
+        documentation:
+          metadata?.documentation ??
+          (metadata?.image?.startsWith('https://')
+            ? [{ url: metadata.image, name: 'Dokumentasi program' }]
+            : []),
+        continuityIndicator: metadata?.continuityIndicator ?? '',
+        successIndicator: metadata?.successIndicator ?? '',
         progress: detail?.progress_percent ?? 0,
         success: detail?.success_percent ?? 0,
         updateNote: detail?.public_note ?? 'Belum ada pembaruan publik.',
@@ -76,14 +103,14 @@ export async function GET() {
       };
     });
 
-return Response.json(
-  { ok: true, data },
-  {
-    headers: {
-      'Cache-Control': 'private, no-store, max-age=0',
-    },
-  },
-);
+    return Response.json(
+      { ok: true, data },
+      {
+        headers: {
+          'Cache-Control': 'private, no-store, max-age=0',
+        },
+      },
+    );
   } catch {
     return Response.json(
       { ok: false, message: 'Data program belum tersedia.' },
@@ -95,7 +122,7 @@ return Response.json(
 export async function PUT(request: Request) {
   try {
     const session = await verifyAdminSession();
-    if (!session) {
+    if (!session || session.aal !== 'aal2') {
       return Response.json(
         { ok: false, message: 'Sesi admin diperlukan.' },
         { status: 401 },
@@ -104,14 +131,22 @@ export async function PUT(request: Request) {
 
     const input = updateSchema.parse(await request.json());
     const data = await supabaseRpc<Record<string, unknown>>(
-      'update_program_progress',
+      'update_admin_program',
       {
         p_slug: input.slug,
         p_title: input.title,
         p_summary: input.copy,
         p_unit_label: input.unit,
         p_media_kind: input.media,
-        p_image_url: input.image,
+        p_image_url:
+          input.documentation.find(
+            (m) =>
+              m.mimeType?.startsWith('image/') ||
+              /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(m.url),
+          )?.url ?? '/fipp-campus-hero.png',
+        p_documentation: input.documentation,
+        p_continuity_indicator: input.continuityIndicator,
+        p_success_indicator: input.successIndicator,
         p_progress_percent: input.progress,
         p_success_percent: input.success,
         p_public_note: input.updateNote,
@@ -146,22 +181,56 @@ const createSchema = z.object({
   continuityIndicator: z.string().trim().min(3).max(500),
   successIndicator: z.string().trim().min(3).max(500),
   updateNote: z.string().trim().min(3).max(2000),
-  documentation: z.array(z.object({ url:z.string().max(3000), name:z.string().max(255), assetId:z.string().uuid().optional() })).max(5),
+  documentation: z
+    .array(
+      z.object({
+        url: z.string().url().max(3000),
+        name: z.string().max(255),
+        assetId: z.string().uuid().optional(),
+        mimeType: z.string().max(120).optional(),
+      }),
+    )
+    .max(5),
 });
 
 export async function POST(request: Request) {
   try {
     const session = await verifyAdminSession();
-    if (!session) return Response.json({ ok:false, message:'Sesi admin diperlukan.' }, { status:401 });
+    if (!session)
+      return Response.json(
+        { ok: false, message: 'Sesi admin diperlukan.' },
+        { status: 401 },
+      );
     const input = createSchema.parse(await request.json());
-    const data = await supabaseRpc<Record<string, unknown>>('create_admin_program', {
-      p_title:input.title, p_summary:input.copy, p_unit_label:input.unit,
-      p_progress_percent:input.progress, p_success_percent:input.success,
-      p_continuity_indicator:input.continuityIndicator, p_success_indicator:input.successIndicator,
-      p_public_note:input.updateNote, p_media:input.documentation,
-    }, { accessToken:session.token, noStore:true });
-    return Response.json({ ok:true, data }, { headers:{ 'Cache-Control':'private, no-store' } });
+    const data = await supabaseRpc<Record<string, unknown>>(
+      'create_admin_program',
+      {
+        p_title: input.title,
+        p_summary: input.copy,
+        p_unit_label: input.unit,
+        p_progress_percent: input.progress,
+        p_success_percent: input.success,
+        p_continuity_indicator: input.continuityIndicator,
+        p_success_indicator: input.successIndicator,
+        p_public_note: input.updateNote,
+        p_media: input.documentation,
+      },
+      { accessToken: session.token, noStore: true },
+    );
+    return Response.json(
+      { ok: true, data },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    );
   } catch (error) {
-    return Response.json({ ok:false, message:error instanceof z.ZodError ? 'Lengkapi seluruh data program.' : 'Program kerja gagal ditambahkan.' }, { status:400 });
+    return Response.json(
+      {
+        ok: false,
+        message:
+          error instanceof z.ZodError
+            ? 'Lengkapi seluruh data program.'
+            : 'Program kerja gagal ditambahkan.',
+      },
+      { status: 400 },
+    );
   }
 }

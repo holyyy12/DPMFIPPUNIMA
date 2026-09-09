@@ -1,2 +1,4 @@
 import { SightPage } from '@/components/v5-directories';
-export default function Page(){return <SightPage/>}
+export default function Page() {
+  return <SightPage />;
+}

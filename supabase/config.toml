@@ -12,7 +12,11 @@ major_version = 17
 [auth]
 enabled = true
 site_url = "https://dpmfippunima.vercel.app"
-additional_redirect_urls = ["https://dpmfippunima.vercel.app/aktivasi", "http://localhost:3000/aktivasi", "http://localhost:3000/auth/callback"]
+additional_redirect_urls = [
+  "https://dpmfippunima.vercel.app/aktivasi",
+  "http://localhost:3000/aktivasi",
+  "http://localhost:3000/auth/callback",
+]
 
 [auth.mfa.totp]
 enroll_enabled = true

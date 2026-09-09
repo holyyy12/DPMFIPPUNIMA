@@ -1,2 +1,4 @@
 import { ArchiveAdminRework } from '@/components/admin-rework';
-export default function Page(){return <ArchiveAdminRework/>}
+export default function Page() {
+  return <ArchiveAdminRework />;
+}

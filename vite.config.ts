@@ -10,11 +10,9 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
 
 const { d1, r2 } = hostingConfig;
 
-const isCodexSeatbeltSandbox =
-  process.env.CODEX_SANDBOX === 'seatbelt';
+const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === 'seatbelt';
 
-const isVercel =
-  process.env.VERCEL === '1';
+const isVercel = process.env.VERCEL === '1';
 
 const localBindingConfig = {
   main: 'vinext/server/fetch-handler',
@@ -54,8 +52,7 @@ export default defineConfig(async () => {
       }),
     );
   } else {
-    const { cloudflare } =
-      await import('@cloudflare/vite-plugin');
+    const { cloudflare } = await import('@cloudflare/vite-plugin');
 
     plugins.push(
       tailwindcss(),
