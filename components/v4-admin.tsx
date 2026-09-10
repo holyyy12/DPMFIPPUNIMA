@@ -330,7 +330,7 @@ export function CmsEditorV4() {
       ];
       setAttachments(all);
       setFiles([]);
-      await runAction(
+      const savedContent = await runAction(
         'content.save',
         {
           id: selected?.id ?? '',
@@ -361,6 +361,7 @@ export function CmsEditorV4() {
             ? 'Konten berhasil dijadwalkan.'
             : 'Draft berhasil disimpan.',
       );
+      if (savedContent?.id) setSelectedId(savedContent.id);
     } catch (e) {
       setMediaError(e instanceof Error ? e.message : 'Media belum tersimpan.');
     } finally {
@@ -485,7 +486,7 @@ export function CmsEditorV4() {
             </label>
           </div>
           <label>
-            Ringkasan / Excerpt *
+            Ringkasan untuk kartu berita (opsional, bukan isi artikel)
             <textarea
               value={summary}
               onChange={(event) => setSummary(event.target.value)}
@@ -536,17 +537,16 @@ export function CmsEditorV4() {
             <div className="v4-rich-toolbar">
               Paragraph　 <b>B</b>　<i>I</i>　<u>U</u>　☷　☰　🔗　▧
             </div>
-            <div
+            <textarea
               className="v4-rich-body"
-              contentEditable
-              suppressContentEditableWarning
-              onInput={(event) => {
+              dir="ltr"
+              style={{ textAlign: 'left', direction: 'ltr' }}
+              value={bodyText}
+              onChange={(event) => {
                 setBodyEdited(true);
-                setBodyText(event.currentTarget.innerText);
+                setBodyText(event.target.value);
               }}
-            >
-              {bodyText}
-            </div>
+            />
           </label>
           <label>
             Tags

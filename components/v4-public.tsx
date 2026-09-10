@@ -548,17 +548,22 @@ export function V4PublicationDetail({ slug }: { slug: string }) {
             DPM FIPP UNIMA ·{' '}
             {formatPublicDate(article?.published_at ?? article?.updated_at)}
           </small>
-          <p>
-            {article?.summary ??
-              error ??
-              'Konten ini belum tersedia pada database.'}
-          </p>
+          {(!article ||
+            !(article.body as { blocks?: { text?: string }[] })?.blocks?.some(
+              (b) => b.text?.trim(),
+            )) && (
+            <p>
+              {article?.summary ||
+                error ||
+                'Konten ini belum tersedia pada database.'}
+            </p>
+          )}
           {article && (
             <>
               {(
                 (article.body as { blocks?: { text?: string }[] })?.blocks ?? []
               )
-                .filter((b) => b.text && b.text !== article.summary)
+                .filter((b) => b.text?.trim())
                 .map((b, i) => (
                   <p key={i} style={{ whiteSpace: 'pre-wrap' }}>
                     {b.text}

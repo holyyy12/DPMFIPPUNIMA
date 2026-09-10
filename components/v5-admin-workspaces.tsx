@@ -23,6 +23,7 @@ import {
   Vote,
 } from 'lucide-react';
 import Link from 'next/link';
+import { OrganizationEditor, PeriodEditor } from './organization-editor';
 import { useAdminPortal } from './use-admin-portal';
 
 type ProgramDraft = {
@@ -1126,19 +1127,7 @@ export function OrganizationAdmin() {
                 }}
               />
             </label>
-            <label>
-              Periode Aktif
-              <select
-                value={data.periods.find((item) => item.is_current)?.id ?? ''}
-                disabled
-              >
-                {data.periods.map((item) => (
-                  <option value={item.id} key={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <PeriodEditor data={data} runAction={runAction} />
             <button
               onClick={() =>
                 void runAction(
@@ -1297,41 +1286,7 @@ export function OrganizationAdmin() {
           </section>
         </main>
         <aside>
-          <section className="v4-panel">
-            <header>
-              <div>
-                <h2>Permintaan Halaman ORMAWA</h2>
-                <p>
-                  Alur: meminta halaman → disetujui → ORMAWA edit & publish.
-                </p>
-              </div>
-            </header>
-            <div className="v5-admin-list">
-              {data.organizations.map((x) => (
-                <article key={x.id}>
-                  <Building2 />
-                  <span>
-                    <b>{x.short_name ?? x.name}</b>
-                    <small>
-                      {x.status === 'active' ? 'Halaman aktif' : x.status}
-                    </small>
-                  </span>
-                  <button
-                    onClick={() =>
-                      location.assign(`/admin/cms?organization=${x.id}`)
-                    }
-                  >
-                    Kelola
-                  </button>
-                </article>
-              ))}
-              {!data.organizations.length && (
-                <p className="v5-filter-empty">
-                  Belum ada ORMAWA pada database.
-                </p>
-              )}
-            </div>
-          </section>
+          <OrganizationEditor data={data} runAction={runAction} />
           <section className="v4-panel v5-admin-form">
             <header>
               <h2>Intervensi Pengelola</h2>

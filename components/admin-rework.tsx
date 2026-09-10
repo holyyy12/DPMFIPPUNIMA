@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { CreateAccount } from './create-account';
 import { EditableMedia } from './editable-media';
 import type { ContentMedia } from '@/lib/content-media';
 import { DdasAttachments } from './ddas-attachments';
@@ -1515,92 +1516,7 @@ export function IamAdminRework() {
             </div>
           </section>
           <aside>
-            <section className="v4-panel v5-admin-form">
-              <header>
-                <div>
-                  <h2>Tambah Pengguna</h2>
-                  <p>
-                    Kirim undangan email untuk membuat kata sandi dan
-                    mengaktifkan akses sesuai role.
-                  </p>
-                </div>
-              </header>
-              <label>
-                Nama
-                <input
-                  value={user.displayName}
-                  onChange={(e) =>
-                    setUser({ ...user, displayName: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Email
-                <input
-                  type="email"
-                  value={user.email}
-                  onChange={(e) => setUser({ ...user, email: e.target.value })}
-                />
-              </label>
-              <label>
-                Role
-                <select
-                  value={user.roleKey}
-                  onChange={(e) =>
-                    setUser({ ...user, roleKey: e.target.value })
-                  }
-                >
-                  {data.roles.map((x) => (
-                    <option key={x.id} value={x.key}>
-                      {x.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Unit
-                <select
-                  value={user.unitId}
-                  onChange={(e) => setUser({ ...user, unitId: e.target.value })}
-                >
-                  <option value="">Semua Unit</option>
-                  {data.units.map((x) => (
-                    <option value={x.id} key={x.id}>
-                      {x.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
-                className="primary"
-                disabled={
-                  inviteBusy || !user.email.trim() || !user.displayName.trim()
-                }
-                onClick={() => {
-                  setInviteBusy(true);
-                  void runAction(
-                    'user.invite_request',
-                    user,
-                    'Undangan dikirim.',
-                  )
-                    .then(() =>
-                      setUser({
-                        displayName: '',
-                        email: '',
-                        roleKey: 'ormawa',
-                        unitId: '',
-                      }),
-                    )
-                    .catch(() => {
-                      /* Pesan error ditampilkan oleh hook. */
-                    })
-                    .finally(() => setInviteBusy(false));
-                }}
-              >
-                <UserPlus />
-                {inviteBusy ? 'Mengirim…' : 'Kirim Undangan'}
-              </button>
-            </section>
+            <CreateAccount data={data} runAction={runAction} />
           </aside>
         </div>
       )}

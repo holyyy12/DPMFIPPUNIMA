@@ -95,6 +95,11 @@ export type AdminPortalSnapshot = {
     created_at: string;
   }>;
   organizations: Array<{
+    contact_public?: {
+      media?: import('./content-media').ContentMedia[];
+      programs?: string;
+      logo?: string;
+    };
     id: string;
     name: string;
     slug: string;

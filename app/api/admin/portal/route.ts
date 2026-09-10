@@ -17,6 +17,10 @@ const actionSchema = z.object({
     'unit.save',
     'permission.create',
     'user.invite_request',
+    'user.create',
+    'period.activate',
+    'period.create',
+    'organization.save',
     'ddas.assign',
     'ddas.attach',
   ]),
@@ -67,10 +71,23 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     const input = actionSchema.parse(await request.json());
-    if (input.action === 'user.invite_request') {
+    if (
+      input.action === 'user.create' ||
+      input.action === 'user.invite_request'
+    ) {
+      if (input.action === 'user.invite_request')
+        return Response.json(
+          {
+            ok: false,
+            message:
+              'Gunakan Buat Akun dengan password acak. Undangan email tidak lagi digunakan.',
+          },
+          { status: 400 },
+        );
       const parsed = z
         .object({
           displayName: z.string().trim().min(1).max(120),
+          password: z.string().min(16).max(128),
           email: z.string().trim().email().max(254),
           roleKey: z.string().min(1),
           unitId: z.union([z.string().uuid(), z.literal('')]).default(''),
@@ -85,7 +102,7 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       const { url, anon } = supabaseConfig();
-      const response = await fetch(`${url}/functions/v1/invite-admin`, {
+      const response = await fetch(`${url}/functions/v1/create-admin`, {
         method: 'POST',
         headers: {
           apikey: anon,
@@ -102,9 +119,27 @@ export async function POST(request: Request) {
       return Response.json(
         {
           ok: response.ok && result.ok === true,
-          message: result.message ?? 'Layanan undangan belum tersedia.',
+          message: result.message ?? 'Layanan pembuatan akun belum tersedia.',
         },
-        { status: response.ok ? 200 : response.status },
+        {
+          status: response.ok ? 200 : response.status,
+          headers: { 'Cache-Control': 'no-store' },
+        },
+      );
+    }
+    if (
+      ['period.activate', 'period.create', 'organization.save'].includes(
+        input.action,
+      )
+    ) {
+      const data = await supabaseRpc(
+        'manage_admin_directory',
+        { p_action: input.action, p_payload: input.payload },
+        { accessToken: session.token, noStore: true },
+      );
+      return Response.json(
+        { ok: true, data },
+        { headers: { 'Cache-Control': 'no-store' } },
       );
     }
     if (input.action === 'unit.save') {

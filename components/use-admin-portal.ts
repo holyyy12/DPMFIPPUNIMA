@@ -46,7 +46,11 @@ export function useAdminPortal() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
       });
-      const body = (await response.json()) as { ok: boolean; message?: string };
+      const body = (await response.json()) as {
+        ok: boolean;
+        message?: string;
+        data?: { id?: string };
+      };
       if (!response.ok || !body.ok) {
         const detail = body.message || 'Aksi gagal dijalankan.';
         setError(detail);
@@ -54,6 +58,7 @@ export function useAdminPortal() {
       }
       setMessage(body.message || success);
       await reload();
+      return body.data;
     },
     [reload],
   );

@@ -643,6 +643,9 @@ export function OrmawaProfile({ slug }: { slug: string }) {
             </>
           )}
           <h2>Program Kerja</h2>
+          {typeof item.contact?.programs === 'string' && (
+            <p style={{ whiteSpace: 'pre-wrap' }}>{item.contact.programs}</p>
+          )}
           <div className="v5-ormawa-programs">
             {programs.map((program, index) => (
               <section key={program.id}>
@@ -654,12 +657,15 @@ export function OrmawaProfile({ slug }: { slug: string }) {
               </section>
             ))}
           </div>
-          {!programs.length && (
+          {!programs.length && !item.contact?.programs && (
             <p>Belum ada program kerja yang dipublikasikan.</p>
           )}
         </article>
         <aside>
           <h2>Galeri ORMAWA</h2>
+          <ContentGallery
+            items={Array.isArray(item.contact?.media) ? item.contact.media : []}
+          />
           <div>
             {gallery.map((content) => (
               <img
@@ -669,7 +675,9 @@ export function OrmawaProfile({ slug }: { slug: string }) {
               />
             ))}
           </div>
-          {!gallery.length && <p>Belum ada galeri yang dipublikasikan.</p>}
+          {!gallery.length && !Array.isArray(item.contact?.media) && (
+            <p>Belum ada galeri yang dipublikasikan.</p>
+          )}
           <Link href="/program">
             Lihat Program Kerja <ArrowRight />
           </Link>
