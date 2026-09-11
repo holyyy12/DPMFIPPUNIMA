@@ -901,7 +901,9 @@ export function CommentsV4() {
           ? 'Dipublikasikan'
           : item.status === 'rejected'
             ? 'Ditolak'
-            : item.status,
+            : item.status === 'deleted'
+              ? 'Dihapus'
+              : item.status,
     body: item.body,
     source: item.resource_type === 'page' ? 'Beranda' : item.resource_type,
     date: new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(
@@ -947,24 +949,41 @@ export function CommentsV4() {
   const replies = comments.filter(
     (item) => item.threadId === active.threadId && item.parentId === active.id,
   );
-  async function moderate(
-    status: 'published' | 'hidden' | 'rejected',
-    reasonCode: 'approved' | 'other',
-  ) {
+  async function deleteComment() {
     if (!active.id) return;
-    const response = await fetch('/api/admin/comments', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ commentId: active.id, status, reasonCode }),
-    });
-    if (!response.ok) return alert('Keputusan penyaringan gagal disimpan.');
-    await reload();
+    if (
+      !window.confirm(
+        'Hapus komentar ini dari portal publik? Balasan lain tetap dipertahankan.',
+      )
+    )
+      return;
+    const reason = window.prompt(
+      'Alasan penghapusan komentar:',
+      'Melanggar ketentuan komentar',
+    );
+    if (!reason?.trim()) return;
+    try {
+      const response = await fetch('/api/admin/comments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commentId: active.id,
+          status: 'deleted',
+          reasonCode: 'other',
+          reasonDetail: reason.trim(),
+        }),
+      });
+      if (!response.ok) return alert('Keputusan penyaringan gagal disimpan.');
+      await reload();
+    } catch {
+      alert('Komentar belum dapat dihapus. Coba kembali.');
+    }
   }
   return (
     <div className="v4-admin-content">
       <PageTitle
-        title="Komentar & Penyaringan"
-        copy="Tinjau, saring, dan kelola semua komentar dari Beranda, Berita, dan halaman lainnya."
+        title="Pemantauan Komentar"
+        copy="Komentar langsung tampil tanpa persetujuan. Pantau diskusi dan hapus komentar yang melanggar ketentuan."
       />
       {(loading || error) && (
         <p className="v5-admin-message">
@@ -975,9 +994,9 @@ export function CommentsV4() {
         {[
           ['Total Komentar', String(comments.length)],
           [
-            'Perlu Penyaringan',
+            'Dipublikasikan',
             String(
-              comments.filter((x) => x.status === 'Perlu Penyaringan').length,
+              comments.filter((x) => x.status === 'Dipublikasikan').length,
             ),
           ],
           [
@@ -985,8 +1004,8 @@ export function CommentsV4() {
             String(comments.filter((x) => x.author === 'Anonim').length),
           ],
           [
-            'Ditolak',
-            String(comments.filter((x) => x.status === 'Ditolak').length),
+            'Dihapus',
+            String(comments.filter((x) => x.status === 'Dihapus').length),
           ],
         ].map((x) => (
           <article key={x[0]}>
@@ -1021,9 +1040,8 @@ export function CommentsV4() {
           aria-label="Saring berdasarkan status"
         >
           <option value="Semua">Semua Status</option>
-          <option value="Perlu Penyaringan">Perlu Penyaringan</option>
           <option value="Dipublikasikan">Dipublikasikan</option>
-          <option value="Ditolak">Ditolak</option>
+          <option value="Dihapus">Dihapus</option>
         </select>
         <select value={sort} onChange={(event) => setSort(event.target.value)}>
           <option>Terbaru</option>
@@ -1105,8 +1123,11 @@ export function CommentsV4() {
             </article>
           ))}
           <footer>
-            <button onClick={() => void moderate('hidden', 'other')}>
-              <Trash2 /> Hapus Thread
+            <button
+              disabled={!active.id || active.status === 'Dihapus'}
+              onClick={() => void deleteComment()}
+            >
+              <Trash2 /> Hapus Komentar
             </button>
             <button
               onClick={() =>
@@ -1115,12 +1136,6 @@ export function CommentsV4() {
               }
             >
               Lihat Thread Lengkap
-            </button>
-            <button
-              className="primary"
-              onClick={() => void moderate('published', 'approved')}
-            >
-              <ShieldCheck /> Saring Komentar
             </button>
           </footer>
         </section>

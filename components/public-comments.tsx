@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Flag, MessageCircle, Send, Trash2 } from 'lucide-react';
+import { Flag, MessageCircle, Send } from 'lucide-react';
 
 type Comment = {
   id: string;
@@ -12,7 +12,7 @@ type Comment = {
   published_at: string | null;
   delete_tombstone: boolean;
 };
-type Receipt = { commentId: string; deletionSecret: string };
+type Receipt = { commentId: string };
 
 export function PublicComments({ slug }: { slug: string }) {
   const threadKey = `publication:${slug}`;
@@ -64,19 +64,9 @@ export function PublicComments({ slug }: { slug: string }) {
       {receipt && (
         <div className="comment-receipt" role="status">
           <b>
-            Komentar tersimpan dan akan tampil setelah penyaringan. Simpan ID
-            serta kode hapus ini.
+            Komentar berhasil dipublikasikan. Hanya admin yang dapat menghapus
+            komentar.
           </b>
-          <code>{receipt.commentId}</code>
-          <code>{receipt.deletionSecret}</code>
-          <button
-            type="button"
-            onClick={() =>
-              navigator.clipboard.writeText(receipt.deletionSecret)
-            }
-          >
-            Salin kode
-          </button>
         </div>
       )}
       {status && <div className="comment-empty">{status}</div>}
@@ -97,7 +87,7 @@ export function PublicComments({ slug }: { slug: string }) {
                     ? new Intl.DateTimeFormat('id-ID', {
                         dateStyle: 'medium',
                       }).format(new Date(comment.published_at))
-                    : 'Menunggu penyaringan'}
+                    : 'Baru saja'}
                 </small>
               </p>
             </div>
@@ -229,38 +219,6 @@ export function PublicComments({ slug }: { slug: string }) {
           {sending ? 'Mengirim…' : 'Kirim komentar'}
         </button>
       </form>
-      <details className="comment-delete">
-        <summary>
-          <Trash2 /> Hapus komentar sendiri
-        </summary>
-        <form
-          onSubmit={async (event) => {
-            event.preventDefault();
-            const data = new FormData(event.currentTarget);
-            const response = await fetch('/api/comments', {
-              method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                commentId: data.get('commentId'),
-                deletionSecret: data.get('deletionSecret'),
-              }),
-            });
-            const result = (await response.json()) as { message?: string };
-            setError(result.message ?? 'Permintaan selesai.');
-            if (response.ok) await load();
-          }}
-        >
-          <label>
-            ID komentar
-            <input name="commentId" required />
-          </label>
-          <label>
-            Kode hapus
-            <input name="deletionSecret" required />
-          </label>
-          <button type="submit">Hapus komentar</button>
-        </form>
-      </details>
     </section>
   );
 }

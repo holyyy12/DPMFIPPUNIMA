@@ -4,9 +4,8 @@ import { supabaseRpc } from '@/lib/supabase/rest';
 
 const schema = z.object({
   commentId: z.string().uuid(),
-  status: z.enum(['published', 'hidden', 'rejected']),
+  status: z.literal('deleted'),
   reasonCode: z.enum([
-    'approved',
     'spam',
     'harassment',
     'privacy',
@@ -76,7 +75,7 @@ export async function PUT(request: Request) {
       },
       { accessToken: session.token, noStore: true },
     );
-    return Response.json({ ok });
+    return Response.json({ ok }, { status: ok ? 200 : 404 });
   } catch {
     return Response.json(
       { ok: false, message: 'Keputusan penyaringan gagal disimpan.' },

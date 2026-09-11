@@ -11,17 +11,18 @@ export default function Page() {
         Tanggapan yang relevan, kritik yang beralasan, pertanyaan, pengalaman,
         dan saran perbaikan dengan bahasa yang menghormati orang lain.
       </p>
-      <h2>Penyaringan</h2>
+      <h2>Publikasi langsung</h2>
       <p>
-        Komentar dapat ditahan atau dihapus karena spam, harassment, hate,
-        threat, data pribadi, impersonation, atau pelanggaran hukum/kebijakan.
-        Keputusan penting memiliki alasan dan jejak penyaringan.
+        Komentar langsung tampil setelah dikirim tanpa persetujuan admin. Admin
+        memantau diskusi dan dapat menghapus komentar yang mengandung spam,
+        pelecehan, ancaman, data pribadi, atau pelanggaran kebijakan.
       </p>
-      <h2>Penghapusan oleh pengirim</h2>
+      <h2>Penghapusan oleh admin</h2>
       <p>
-        Pengirim menerima credential privat satu kali untuk menghapus komentar
-        sendiri. Komentar yang memiliki balasan menjadi tombstone agar alur
-        diskusi tetap dapat dipahami. Pengeditan setelah kirim tidak tersedia.
+        Pengguna tidak dapat menghapus komentar sendiri. Jika ada masalah,
+        gunakan tombol Laporkan agar admin dapat meninjaunya. Penghapusan oleh
+        admin dicatat; komentar yang memiliki balasan menyisakan penanda agar
+        alur diskusi tetap dapat dipahami.
       </p>
     </PolicyPage>
   );

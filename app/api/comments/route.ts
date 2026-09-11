@@ -1,21 +1,10 @@
-import {
-  commentCreateSchema,
-  commentDeleteSchema,
-} from '@/lib/contracts/comments';
-import { hmac } from '@/lib/security/crypto';
+import { commentCreateSchema } from '@/lib/contracts/comments';
 import { supabaseRequest, supabaseRpc } from '@/lib/supabase/rest';
 
 const headers = {
   'Cache-Control': 'no-store',
   'X-Content-Type-Options': 'nosniff',
 };
-
-function pepper() {
-  const value = process.env.COMMENT_DELETE_PEPPER;
-  if (!value || value.includes('SET_IN_'))
-    throw new Error('BACKEND_NOT_CONFIGURED');
-  return value;
-}
 
 export async function GET(request: Request) {
   try {
@@ -73,8 +62,6 @@ export async function POST(request: Request) {
         { ok: true, data: null, requestId },
         { status: 202, headers },
       );
-    const deletionSecret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
-    const credentialHash = await hmac(deletionSecret, pepper());
     const commentId = await supabaseRpc<string>(
       'create_public_comment',
       {
@@ -83,13 +70,18 @@ export async function POST(request: Request) {
         p_display_mode: input.displayMode,
         p_display_name: input.displayName || null,
         p_body: input.body,
-        p_credential_hash: credentialHash,
+        p_credential_hash: null,
         p_request_id: requestId,
       },
       { noStore: true },
     );
     return Response.json(
-      { ok: true, data: { commentId, deletionSecret }, requestId },
+      {
+        ok: true,
+        data: { commentId },
+        message: 'Komentar berhasil dipublikasikan.',
+        requestId,
+      },
       { status: 201, headers },
     );
   } catch (error) {
@@ -109,42 +101,13 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
-  const requestId = crypto.randomUUID();
-  try {
-    const input = commentDeleteSchema.parse(await request.json());
-    const deleted = await supabaseRpc<boolean>(
-      'delete_own_comment',
-      {
-        p_comment_id: input.commentId,
-        p_credential_hash: await hmac(input.deletionSecret, pepper()),
-        p_request_id: requestId,
-      },
-      { noStore: true },
-    );
-    return Response.json(
-      {
-        ok: deleted,
-        message: deleted
-          ? 'Komentar dihapus.'
-          : 'Kredensial hapus tidak cocok atau sudah digunakan.',
-        requestId,
-      },
-      { status: deleted ? 200 : 403, headers },
-    );
-  } catch (error) {
-    const unavailable =
-      error instanceof Error &&
-      error.message.includes('BACKEND_NOT_CONFIGURED');
-    return Response.json(
-      {
-        ok: false,
-        message: unavailable
-          ? 'Diskusi belum diaktifkan pada backend greenfield.'
-          : 'Komentar tidak dapat dihapus.',
-        requestId,
-      },
-      { status: unavailable ? 503 : 400, headers },
-    );
-  }
+export async function DELETE() {
+  return Response.json(
+    {
+      ok: false,
+      message:
+        'Hanya admin yang dapat menghapus komentar melalui Portal Admin.',
+    },
+    { status: 403, headers },
+  );
 }
