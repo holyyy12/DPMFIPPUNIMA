@@ -18,6 +18,7 @@ import {
 import { PublicHeader } from './public-header';
 import { PublicFooter } from './public-footer';
 import { PublicComments } from './public-comments';
+import { HomeSurveyCard } from './home-survey-card';
 import { ContentGallery } from './content-gallery';
 import { contentMedia } from '@/lib/content-media';
 import { DdasWorkspace } from './ddas-workspace';
@@ -74,7 +75,6 @@ export function V4Home() {
   const studies = data.contents
     .filter((item) => item.content_type === 'd-sight')
     .slice(0, 3);
-  const surveys = data.surveys.slice(0, 2);
   return (
     <PublicFrame>
       <section
@@ -200,51 +200,7 @@ export function V4Home() {
             </Link>
           </footer>
         </article>
-        <article>
-          <header>
-            <span>
-              <Vote />
-            </span>
-            <h2>D-SIGHT Survei</h2>
-          </header>
-          <div className="v5-survey-card">
-            <b>
-              {surveys.length
-                ? 'Isu prioritas mahasiswa'
-                : 'Belum ada survei aktif'}
-            </b>
-            {(surveys.length
-              ? surveys
-              : [
-                  {
-                    id: 'empty',
-                    title: 'Belum ada data survei',
-                    responseCount: 0,
-                  },
-                ]
-            ).map((survey) => (
-              <div key={survey.id}>
-                <p>{survey.title}</p>
-                <div>
-                  <i style={{ width: '0%' }} />
-                  <span>0%</span>
-                </div>
-              </div>
-            ))}
-            <small>
-              {surveys.reduce(
-                (sum, item) => sum + Number(item.responseCount),
-                0,
-              )}{' '}
-              respons masuk · hasil sementara
-            </small>
-          </div>
-          <footer>
-            <Link href="/d-sight?tab=survei">
-              Pilih Isu <ArrowRight />
-            </Link>
-          </footer>
-        </article>
+        <HomeSurveyCard />
         <article>
           <header>
             <span>

@@ -5172,6 +5172,58 @@ footer {
 .v5-survey-card {
   margin-top: 18px;
 }
+.home-survey-summary {
+  margin-top: 18px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.home-survey-summary h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.home-survey-summary p,
+.home-survey-summary small {
+  display: block;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.home-survey-result {
+  margin-bottom: 14px;
+}
+.home-survey-result > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.home-survey-result strong {
+  flex-shrink: 0;
+}
+.home-survey-result progress {
+  display: block;
+  width: 100%;
+  height: 9px;
+  margin-top: 6px;
+  appearance: none;
+  border: 0;
+  border-radius: 99px;
+  overflow: hidden;
+  background: #e7ece9;
+}
+.home-survey-result progress::-webkit-progress-bar {
+  background: #e7ece9;
+}
+.home-survey-result progress::-webkit-progress-value {
+  background: #07815c;
+  border-radius: 99px;
+}
+.home-survey-result progress::-moz-progress-bar {
+  background: #07815c;
+  border-radius: 99px;
+}
 .v5-survey-card > p {
   margin: 12px 0 4px;
   font-size: 11px;
