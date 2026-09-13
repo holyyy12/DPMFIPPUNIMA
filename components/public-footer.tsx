@@ -59,8 +59,7 @@ export function PublicFooter() {
       <div className="shell copyright">
         © 2026 DPM FIPP - Universitas Negeri Manado. All Rights Reserved.
         <span>
-          <Link href="https://www.instagram.com/hhholyyy_/">
-            {' '}
+          <Link className="developed" href="https://www.instagram.com/hhholyyy_/">
             Developed by @hhholyyy_
           </Link>
         </span>

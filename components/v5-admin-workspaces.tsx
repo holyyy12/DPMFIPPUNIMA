@@ -1,4 +1,5 @@
 'use client';
+import { OrmawaUnitsAdmin } from './ormawa-units-admin';
 
 import { useEffect, useState } from 'react';
 import {
@@ -1109,6 +1110,11 @@ export function OrganizationAdmin() {
         <p className="v5-admin-message">
           {loading ? 'Memuat data Supabase…' : error || message}
         </p>
+      )}
+      {data.me?.roles.includes('super_admin') && (
+        <section id="ormawa-units" style={{ marginBlock: '1.5rem' }}>
+          <OrmawaUnitsAdmin data={data} runAction={runAction} />
+        </section>
       )}
       <div className="v5-admin-layout">
         <main>

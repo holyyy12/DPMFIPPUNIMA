@@ -28,6 +28,49 @@ const { deriveReceipt, encrypt, decrypt } = await load(
   '../../lib/security/crypto.ts',
 );
 const { contentMedia } = await load('../../lib/content-media.ts');
+const { mediaDownloadUrl, mediaKind } = await load('../../lib/media-access.ts');
+test('legacy D-DAR and registered storage files expose preview and download', () => {
+  const old = contentMedia({
+    body: {
+      attachment: {
+        publicUrl:
+          'https://test.supabase.co/storage/v1/object/public/public-media/file.pdf',
+        name: 'Arsip.pdf',
+      },
+    },
+  });
+  assert.equal(old.length, 1);
+  assert.equal(mediaKind(old[0]), 'pdf');
+  assert.equal(
+    new URL(mediaDownloadUrl(old[0])).searchParams.get('download'),
+    'Arsip.pdf',
+  );
+  assert.equal(
+    mediaDownloadUrl({ url: 'javascript:alert(1)', name: 'Unsafe' }),
+    '',
+  );
+  assert.equal(
+    mediaKind({ url: 'https://example.com/video.mp4?x=1' }),
+    'video',
+  );
+  const previous = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+  try {
+    const stored = contentMedia({
+      body: {
+        attachments: [
+          { bucket: 'public-media', objectPath: 'admin/a b.pdf', name: 'A' },
+          null,
+        ],
+      },
+    });
+    assert.equal(stored.length, 1);
+    assert.ok(stored[0].url.endsWith('/admin/a%20b.pdf'));
+  } finally {
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    else process.env.NEXT_PUBLIC_SUPABASE_URL = previous;
+  }
+});
 const input = {
   category: 'Akademik',
   subject: 'Contoh aspirasi',

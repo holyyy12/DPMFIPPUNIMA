@@ -41,6 +41,7 @@ Deno.serve(async (request) => {
         p_name: input.displayName,
         p_role: input.roleKey,
         p_unit: input.unitId || null,
+        p_ormawa_unit: input.ormawaUnitId || null,
       }),
     });
     if (!prepared.ok)
@@ -53,11 +54,15 @@ Deno.serve(async (request) => {
     if (!reservation.ok)
       return reply(
         400,
-        reservation.code === 'email_exists'
-          ? 'Email sudah terdaftar. Akun lama tidak diubah.'
-          : reservation.code === 'rate_limit'
-            ? 'Tunggu satu menit sebelum mencoba kembali.'
-            : 'Periksa nama, email, role, dan unit.',
+        reservation.code === 'invalid_ormawa_unit'
+          ? 'Pilih ORMAWA Unit yang aktif, bukan Unit DPM.'
+          : reservation.code === 'ormawa_role_required'
+            ? 'ORMAWA Unit hanya dapat dipilih untuk role ORMAWA.'
+            : reservation.code === 'email_exists'
+              ? 'Email sudah terdaftar. Akun lama tidak diubah.'
+              : reservation.code === 'rate_limit'
+                ? 'Tunggu satu menit sebelum mencoba kembali.'
+                : 'Periksa nama, email, role, dan unit.',
       );
     const headers = {
       apikey: secret,

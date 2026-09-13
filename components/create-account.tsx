@@ -18,13 +18,18 @@ export function CreateAccount({
     email: '',
     roleKey: 'ormawa',
     unitId: '',
+    ormawaUnitId: '',
     password: '',
   });
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState(false);
   const [notice, setNotice] = useState('');
   const update = (field: keyof typeof form, value: string) => {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+      ...(field === 'roleKey' ? { unitId: '', ormawaUnitId: '' } : {}),
+    }));
     setCreated(false);
   };
   const generate = () =>
@@ -99,24 +104,52 @@ export function CreateAccount({
             ))}
           </select>
         </label>
-        <label>
-          Unit
-          <select
-            value={form.unitId}
-            onChange={(e) => update('unitId', e.target.value)}
-          >
-            <option value="">Tanpa unit khusus</option>
-            {data.units.map((unit) => (
-              <option key={unit.id} value={unit.id}>
-                {unit.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        {form.roleKey === 'ormawa' ? (
+          <label>
+            ORMAWA Unit
+            <select
+              value={form.ormawaUnitId}
+              onChange={(e) => update('ormawaUnitId', e.target.value)}
+              required
+            >
+              <option value="">Pilih ORMAWA Unit</option>
+              {data.ormawaUnits
+                .filter((unit) => unit.status === 'active')
+                .map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.code} — {unit.name}
+                  </option>
+                ))}
+            </select>
+            {!data.ormawaUnits.length && (
+              <small>Buat unit terlebih dahulu di tab ORMAWA Units.</small>
+            )}
+          </label>
+        ) : (
+          <label>
+            Unit DPM
+            <select
+              value={form.unitId}
+              onChange={(e) => update('unitId', e.target.value)}
+            >
+              <option value="">Tanpa unit khusus</option>
+              {data.units.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <button
           className="primary"
           disabled={
-            created || !form.password || !form.email || !form.displayName
+            created ||
+            !form.password ||
+            !form.email ||
+            !form.displayName ||
+            (form.roleKey === 'ormawa' && !form.ormawaUnitId) ||
+            (form.roleKey === 'organization_unit' && !form.unitId)
           }
           onClick={() => {
             setBusy(true);

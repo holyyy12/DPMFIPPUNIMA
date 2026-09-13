@@ -1,4 +1,5 @@
 import type { ContentMedia } from '@/lib/content-media';
+import { MediaActions } from './media-actions';
 export function ContentGallery({ items }: { items: ContentMedia[] }) {
   return (
     <div className="content-media-gallery">
@@ -14,15 +15,12 @@ export function ContentGallery({ items }: { items: ContentMedia[] }) {
             />
           ) : m.mimeType?.startsWith('image/') ||
             /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(m.url) ? (
-            <a href={m.url} target="_blank" rel="noreferrer">
-              <img loading="lazy" src={m.url} alt={m.name} />
-            </a>
+            <img loading="lazy" src={m.url} alt={m.name} />
           ) : (
-            <a href={m.url} target="_blank" rel="noreferrer">
-              Buka {m.name}
-            </a>
+            <p>{m.name}</p>
           )}
           <figcaption>{m.name}</figcaption>
+          <MediaActions media={m} />
         </figure>
       ))}
     </div>

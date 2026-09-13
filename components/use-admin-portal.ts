@@ -21,7 +21,7 @@ export function useAdminPortal() {
       };
       if (!response.ok || !body.ok || !body.data)
         throw new Error(body.message || 'Gagal memuat data.');
-      setData(body.data);
+      setData({ ...emptyAdminPortal, ...body.data });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Gagal memuat data.');
     } finally {

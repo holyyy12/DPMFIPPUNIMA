@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ContentGallery } from './content-gallery';
+import { MediaActions } from './media-actions';
 import { contentMedia } from '@/lib/content-media';
 import { PublicSurveys } from './public-surveys';
 import { useMemo, useState } from 'react';
@@ -39,9 +40,15 @@ const metadata = (item: PublicContent) => (item.seo ?? {}) as ContentMetadata;
 const categoryOf = (item: PublicContent, fallback: string) =>
   metadata(item).category ?? metadata(item).topic ?? fallback;
 function downloadUrl(item: PublicContent) {
+  const attachment = contentMedia(item)[0];
+  if (attachment) return attachment.url;
   const direct = metadata(item).downloadUrl;
   if (direct) return direct;
   return item.featured_object_path ? publicAssetUrl(item) : '';
+}
+function archiveOwner(item: PublicContent) {
+  const owner = (item.body as { owner?: string } | undefined)?.owner;
+  return owner || item.organization_name || item.unit_name || 'DPM FIPP';
 }
 function programView(item: PublicContent) {
   const detail = metadata(item).program ?? {};
@@ -382,14 +389,9 @@ export function TracePage() {
                   </p>
                 </div>
                 {url ? (
-                  <a
-                    className="v5-download-button"
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Download /> Unduh
-                  </a>
+                  <MediaActions
+                    media={contentMedia(item)[0] ?? { url, name: item.title }}
+                  />
                 ) : (
                   <button type="button" disabled title="Berkas belum diunggah">
                     <Download /> Belum tersedia
@@ -416,11 +418,7 @@ export function DarPage() {
   const [period, setPeriod] = useState('Semua');
   const items = data.contents.filter((item) => item.content_type === 'd-dar');
   const organizations = [
-    ...new Set(
-      items.map(
-        (item) => item.organization_name ?? item.unit_name ?? 'DPM FIPP',
-      ),
-    ),
+    ...new Set(items.map((item) => archiveOwner(item))),
   ].sort();
   const periods = [
     ...new Set(
@@ -432,7 +430,7 @@ export function DarPage() {
   const filtered = useMemo(
     () =>
       items.filter((item) => {
-        const owner = item.organization_name ?? item.unit_name ?? 'DPM FIPP';
+        const owner = archiveOwner(item);
         const itemPeriod = metadata(item).period ?? data.period.name ?? '';
         return (
           (organization === 'Semua' || owner === organization) &&
@@ -493,9 +491,7 @@ export function DarPage() {
             const url = downloadUrl(item);
             return (
               <article key={item.id}>
-                <span>
-                  {item.organization_name ?? item.unit_name ?? 'DPM FIPP'}
-                </span>
+                <span>{archiveOwner(item)}</span>
                 <b>
                   <FileArchive />
                   {item.title}
@@ -503,20 +499,20 @@ export function DarPage() {
                 <span>{categoryOf(item, 'Dokumen')}</span>
                 <span>{metadata(item).period ?? data.period.name ?? '—'}</span>
                 <span>
-                  {metadata(item).fileFormat ?? '—'}
+                  {metadata(item).fileFormat ??
+                    contentMedia(item)[0]
+                      ?.mimeType?.split('/')
+                      .pop()
+                      ?.toUpperCase() ??
+                    '—'}
                   {metadata(item).fileSize
                     ? ` · ${metadata(item).fileSize}`
                     : ''}
                 </span>
                 {url ? (
-                  <a
-                    className="v5-download-button"
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Download /> Unduh
-                  </a>
+                  <MediaActions
+                    media={contentMedia(item)[0] ?? { url, name: item.title }}
+                  />
                 ) : (
                   <button type="button" disabled title="Berkas belum diunggah">
                     <Download /> Belum tersedia
@@ -666,15 +662,13 @@ export function OrmawaProfile({ slug }: { slug: string }) {
           <ContentGallery
             items={Array.isArray(item.contact?.media) ? item.contact.media : []}
           />
-          <div>
-            {gallery.map((content) => (
-              <img
-                src={publicAssetUrl(content)}
-                alt={`Dokumentasi ${item.name}`}
-                key={content.id}
-              />
-            ))}
-          </div>
+          <ContentGallery
+            items={gallery.map((content) => ({
+              url: publicAssetUrl(content),
+              name: `Dokumentasi ${item.name}`,
+              mimeType: 'image/jpeg',
+            }))}
+          />
           {!gallery.length && !Array.isArray(item.contact?.media) && (
             <p>Belum ada galeri yang dipublikasikan.</p>
           )}

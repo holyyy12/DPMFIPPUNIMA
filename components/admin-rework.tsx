@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { CreateAccount } from './create-account';
+import { OrmawaUnitsAdmin, OrmawaUnitAssignment } from './ormawa-units-admin';
 import { EditableMedia } from './editable-media';
-import type { ContentMedia } from '@/lib/content-media';
+import { contentMedia, type ContentMedia } from '@/lib/content-media';
+import { MediaActions } from './media-actions';
 import { DdasAttachments } from './ddas-attachments';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -1020,18 +1022,21 @@ export function TraceAdminRework() {
 export function ArchiveAdminRework() {
   const { data, loading, error, message, runAction } = useAdminPortal();
   const [title, setTitle] = useState('');
-  const [owner, setOwner] = useState('DPM FIPP');
+  const [ownerType, setOwnerType] = useState('dpm');
+  const [ownerUnitId, setOwnerUnitId] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [fileKey, setFileKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [local, setLocal] = useState('');
+  const [status, setStatus] = useState('all');
   const archives = data.contents.filter(
     (x) =>
-      x.content_type === 'd-dar' ||
-      (x.content_type === 'd-trace' && x.visibility === 'internal'),
+      x.content_type === 'd-dar' && (status === 'all' || x.status === status),
   );
   async function submit() {
-    if (!file) return;
+    if (!file || busy) return;
     setBusy(true);
+    setLocal('');
     try {
       const [uploaded] = await uploadFiles(
         [file],
@@ -1039,29 +1044,41 @@ export function ArchiveAdminRework() {
         1,
         20 * 1024 * 1024,
       );
-      const contentType = data.contentTypes.find((x) => x.key === 'd-dar');
-      if (!contentType) throw new Error('Tipe D-DAR belum tersedia.');
       await runAction(
-        'content.save',
-        {
-          id: '',
-          title,
-          slug: slugify(title),
-          summary: `Arsip ${owner}`,
-          body: { schemaVersion: 1, blocks: [], attachment: uploaded, owner },
-          status: 'published',
-          contentTypeId: contentType.id,
-          unitId: data.units[0]?.id ?? '',
-          language: 'id',
-          visibility: 'public',
-        },
-        'Arsip berhasil diunggah.',
+        'ddar.save',
+        { title, ownerType, ownerUnitId, assetId: uploaded.assetId },
+        'Arsip berhasil diterbitkan.',
       );
       setTitle('');
       setFile(null);
-      setLocal('');
-    } catch (e) {
-      setLocal(e instanceof Error ? e.message : 'Upload arsip gagal.');
+      setFileKey((value) => value + 1);
+    } catch (cause) {
+      setLocal(cause instanceof Error ? cause.message : 'Unggah arsip gagal.');
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function change(action: string, id: string) {
+    if (busy) return;
+    if (
+      action === 'delete' &&
+      !window.confirm(
+        'Hapus arsip ini dari D-DAR? File asal tetap disimpan agar tidak merusak konten lain. Penghapusan dapat dipulihkan oleh pengelola database.',
+      )
+    )
+      return;
+    setBusy(true);
+    setLocal('');
+    try {
+      await runAction(
+        'ddar.' + action,
+        { id },
+        action === 'delete'
+          ? 'Arsip dihapus dari direktori.'
+          : 'Status arsip diperbarui.',
+      );
+    } catch (cause) {
+      setLocal(cause instanceof Error ? cause.message : 'Perubahan gagal.');
     } finally {
       setBusy(false);
     }
@@ -1070,81 +1087,151 @@ export function ArchiveAdminRework() {
     <div className="v4-admin-content">
       <Title
         title="D-DAR"
-        copy="Unggah arsip cepat DPM dan ORMAWA langsung dari direktori."
+        copy="Kelola arsip DPM dan ORMAWA. Arsip terbit dapat dilihat dan diunduh oleh publik."
       />
       <State loading={loading} error={error} message={local || message} />
       <section className="v4-panel">
         <header>
           <div>
-            <h2>Direktori Arsip</h2>
+            <h2>Unggah Arsip</h2>
             <p>
-              Judul yang Anda isi menjadi nama publik; nama file lokal tidak
-              ditampilkan.
+              Pilih pemilik dan berkas. ORMAWA Units dikelola Super Admin pada
+              halaman Tentang.
             </p>
           </div>
         </header>
         <div className="v9-archive-form">
           <label className="v9-drop">
             <Upload />
-            <b>{file?.name || 'Unggah File Dokumen'}</b>
+            <b>{file?.name || 'Pilih gambar, video, atau dokumen'}</b>
             <small>Maksimal 20 MB</small>
             <input
+              key={fileKey}
               type="file"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv"
+              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
             />
           </label>
           <label>
             Judul Arsip
             <input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Contoh: Arsip SMF"
+              maxLength={200}
+              onChange={(event) => setTitle(event.target.value)}
             />
           </label>
           <label>
             Pemilik
-            <select value={owner} onChange={(e) => setOwner(e.target.value)}>
-              <option>DPM FIPP</option>
-              {data.organizations.map((x) => (
-                <option key={x.id}>{x.short_name || x.name}</option>
-              ))}
+            <select
+              value={ownerType}
+              onChange={(event) => {
+                setOwnerType(event.target.value);
+                setOwnerUnitId('');
+              }}
+            >
+              <option value="dpm">DPM</option>
+              <option value="ormawa">ORMAWA Units</option>
+            </select>
+          </label>
+          <label>
+            {ownerType === 'dpm' ? 'Unit DPM' : 'ORMAWA Unit'}
+            <select
+              value={ownerUnitId}
+              onChange={(event) => setOwnerUnitId(event.target.value)}
+            >
+              <option value="">
+                {ownerType === 'dpm' ? 'DPM FIPP (umum)' : 'Pilih ORMAWA Unit'}
+              </option>
+              {(ownerType === 'dpm' ? data.units : data.ormawaUnits)
+                .filter((unit) => unit.status === 'active')
+                .map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </option>
+                ))}
             </select>
           </label>
           <button
             className="primary"
-            disabled={busy || !file || !title}
+            disabled={
+              busy ||
+              !file ||
+              !title.trim() ||
+              (ownerType === 'ormawa' && !ownerUnitId)
+            }
             onClick={() => void submit()}
           >
             <Upload />
-            {busy ? 'Mengunggah…' : 'Unggah File'}
+            {busy ? 'Memproses…' : 'Terbitkan Arsip'}
           </button>
         </div>
-        <div className="v5-admin-table v9-archive-table">
-          <div>
-            <b>Organisasi</b>
-            <b>Judul</b>
-            <b>Status</b>
-            <b>Diperbarui</b>
-          </div>
-          {archives.map((x) => (
-            <p key={x.id}>
-              <span>{x.unit_name || 'DPM FIPP'}</span>
-              <b>
-                <Archive />
-                {x.title}
-              </b>
-              <span>{x.status}</span>
-              <span>
-                {new Intl.DateTimeFormat('id-ID', {
-                  dateStyle: 'medium',
-                }).format(new Date(x.updated_at))}
-              </span>
-            </p>
+      </section>
+      <section className="v4-panel">
+        <header>
+          <h2>Direktori Arsip</h2>
+          <label>
+            Status
+            <select
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+            >
+              <option value="all">Semua status</option>
+              <option value="published">Terbit</option>
+              <option value="archived">Diarsipkan</option>
+            </select>
+          </label>
+        </header>
+        <div className="ddar-admin-list">
+          {archives.map((item) => (
+            <article key={item.id}>
+              <div>
+                <h3>{item.title}</h3>
+                <p>
+                  {String(
+                    (item.body as Record<string, unknown>)?.owner ||
+                      item.unit_name ||
+                      'DPM FIPP',
+                  )}{' '}
+                  ·{' '}
+                  {item.status === 'archived'
+                    ? 'Diarsipkan'
+                    : item.status === 'published'
+                      ? 'Terbit'
+                      : item.status}
+                </p>
+              </div>
+              {contentMedia(item).map((media, index) => (
+                <MediaActions key={media.url + index} media={media} />
+              ))}
+              <div className="ddar-admin-actions">
+                <button
+                  className="outline"
+                  disabled={busy}
+                  onClick={() =>
+                    void change(
+                      item.status === 'archived' ? 'restore' : 'archive',
+                      item.id,
+                    )
+                  }
+                >
+                  {item.status === 'archived'
+                    ? 'Terbitkan kembali'
+                    : 'Arsipkan'}
+                </button>
+                <button
+                  className="outline"
+                  disabled={busy}
+                  onClick={() => void change('delete', item.id)}
+                >
+                  Hapus
+                </button>
+              </div>
+            </article>
           ))}
-          {!archives.length && (
-            <p className="v5-filter-empty">Belum ada arsip.</p>
-          )}
         </div>
+        {!archives.length && (
+          <p className="v5-filter-empty">Tidak ada arsip untuk status ini.</p>
+        )}
       </section>
     </div>
   );
@@ -1414,6 +1501,7 @@ type IamTab =
   | 'roles'
   | 'permissions'
   | 'units'
+  | 'ormawa-units'
   | 'access';
 export function IamAdminRework() {
   const { data, loading, error, message, runAction } = useAdminPortal();
@@ -1429,14 +1517,25 @@ export function IamAdminRework() {
   const [permission, setPermission] = useState({ key: '', description: '' });
   const [query, setQuery] = useState('');
   const [inviteBusy, setInviteBusy] = useState(false);
+  const [ormawaFilter, setOrmawaFilter] = useState('');
   const users = useMemo(
     () =>
-      data.users.filter((x) =>
-        `${x.display_name} ${x.email_normalized ?? ''}`
-          .toLowerCase()
-          .includes(query.toLowerCase()),
+      data.users.filter(
+        (x) =>
+          (!ormawaFilter ||
+            x.roles.some((role) => role.ormawaUnitId === ormawaFilter)) &&
+          `${x.display_name} ${x.email_normalized ?? ''} ${x.roles
+            .map((role) => {
+              const unit = data.ormawaUnits.find(
+                (item) => item.id === role.ormawaUnitId,
+              );
+              return `${role.name} ${unit?.name ?? ''} ${unit?.code ?? ''}`;
+            })
+            .join(' ')}`
+            .toLowerCase()
+            .includes(query.toLowerCase()),
       ),
-    [data.users, query],
+    [data.users, data.ormawaUnits, query, ormawaFilter],
   );
   const tabs: [IamTab, string][] = [
     ['summary', 'Ringkasan'],
@@ -1444,12 +1543,13 @@ export function IamAdminRework() {
     ['roles', 'Role'],
     ['permissions', 'Permission Matrix'],
     ['units', 'DPM Units'],
+    ['ormawa-units', 'ORMAWA Units'],
     ['access', 'Akses per Unit'],
   ];
   return (
     <div className="v4-admin-content">
       <Title
-        title="Pengguna, Role, Permission & DPM Units"
+        title="Pengguna, Role & Unit Organisasi"
         copy="Kelola pengguna, role, izin, unit, dan akses terlingkup dari satu halaman."
       />
       <State loading={loading} error={error} message={message} />
@@ -1470,7 +1570,8 @@ export function IamAdminRework() {
             ['Pengguna', data.users.length],
             ['Role', data.roles.length],
             ['Permission', data.permissions.length],
-            ['Unit', data.units.length],
+            ['DPM Units', data.units.length],
+            ['ORMAWA Units', data.ormawaUnits.length],
           ].map((x) => (
             <article key={x[0]}>
               <Users />
@@ -1496,8 +1597,23 @@ export function IamAdminRework() {
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Cari nama atau email"
+                  placeholder="Cari nama, email, atau ORMAWA"
                 />
+              </label>
+              <label>
+                ORMAWA Unit
+                <select
+                  aria-label="Filter pengguna berdasarkan ORMAWA Unit"
+                  value={ormawaFilter}
+                  onChange={(event) => setOrmawaFilter(event.target.value)}
+                >
+                  <option value="">Semua unit</option>
+                  {data.ormawaUnits.map((unit) => (
+                    <option key={unit.id} value={unit.id}>
+                      {unit.code} — {unit.name}
+                    </option>
+                  ))}
+                </select>
               </label>
             </div>
             <div className="v5-admin-list">
@@ -1508,17 +1624,46 @@ export function IamAdminRework() {
                     <b>{x.display_name}</b>
                     <small>
                       {x.email_normalized || 'Tanpa email'} ·{' '}
-                      {x.roles.map((r) => r.name).join(', ') || 'Tanpa role'}
+                      {x.roles
+                        .map((r) => {
+                          const unit =
+                            r.key === 'ormawa'
+                              ? data.ormawaUnits.find(
+                                  (u) => u.id === r.ormawaUnitId,
+                                )
+                              : data.units.find((u) => u.id === r.unitId);
+                          return `${r.name}${unit ? ` — ${unit.name}` : r.key === 'ormawa' ? ' — Unit belum ditentukan' : ''}`;
+                        })
+                        .join(', ') || 'Tanpa role'}
                     </small>
+                    {data.me?.roles.includes('super_admin') &&
+                      x.roles.some((r) => r.key === 'ormawa') && (
+                        <OrmawaUnitAssignment
+                          key={
+                            x.id + x.roles.map((r) => r.ormawaUnitId).join(',')
+                          }
+                          data={data}
+                          runAction={runAction}
+                          user={x}
+                        />
+                      )}
                   </span>
                 </article>
               ))}
+              {!users.length && (
+                <p className="v5-filter-empty">
+                  Tidak ada pengguna sesuai pencarian atau unit yang dipilih.
+                </p>
+              )}
             </div>
           </section>
           <aside>
             <CreateAccount data={data} runAction={runAction} />
           </aside>
         </div>
+      )}
+      {tab === 'ormawa-units' && (
+        <OrmawaUnitsAdmin data={data} runAction={runAction} />
       )}
       {tab === 'roles' && (
         <section className="v4-panel">
@@ -1691,6 +1836,24 @@ export function IamAdminRework() {
             </div>
           </header>
           <div className="v5-admin-list">
+            {data.ormawaUnits.map((unit) => (
+              <article key={unit.id}>
+                <Users />
+                <span>
+                  <b>{unit.name} · ORMAWA</b>
+                  <small>
+                    {data.users
+                      .filter((user) =>
+                        user.roles.some(
+                          (role) => role.ormawaUnitId === unit.id,
+                        ),
+                      )
+                      .map((user) => user.display_name)
+                      .join(', ') || 'Belum ada pengguna'}
+                  </small>
+                </span>
+              </article>
+            ))}
             {data.units.map((x) => (
               <article key={x.id}>
                 <Users />

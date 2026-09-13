@@ -50,6 +50,7 @@ async function execute(responses) {
         displayName: 'Pengguna uji',
         roleKey: 'ormawa',
         unitId: '',
+        ormawaUnitId: '11111111-1111-4111-8111-111111111111',
         password: 'Aa1!random-test-password',
       }),
     }),
@@ -64,6 +65,11 @@ test('direct account creation checks authorization before Auth and never calls S
   ]);
   assert.equal(response.status, 200);
   assert.match(calls[0].url, /prepare_admin_account$/);
+  assert.equal(
+    calls[0].body.p_ormawa_unit,
+    '11111111-1111-4111-8111-111111111111',
+  );
+  assert.equal(calls[0].body.p_unit, null);
   assert.match(calls[1].url, /auth\/v1\/admin\/users$/);
   assert.equal(calls[1].body.email_confirm, true);
   assert.equal(calls[1].body.password, 'Aa1!random-test-password');

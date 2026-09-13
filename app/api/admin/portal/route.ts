@@ -13,6 +13,10 @@ const actionSchema = z.object({
     'ddas.internal_note',
     'content.save',
     'content.delete',
+    'ddar.save',
+    'ddar.archive',
+    'ddar.restore',
+    'ddar.delete',
     'survey.save',
     'unit.save',
     'permission.create',
@@ -21,6 +25,8 @@ const actionSchema = z.object({
     'period.activate',
     'period.create',
     'organization.save',
+    'ormawa.unit.save',
+    'ormawa.unit.assign',
     'ddas.assign',
     'ddas.attach',
   ]),
@@ -71,6 +77,17 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     const input = actionSchema.parse(await request.json());
+    if (input.action.startsWith('ddar.')) {
+      const data = await supabaseRpc(
+        'manage_ddar',
+        { p_action: input.action, p_payload: input.payload },
+        { accessToken: session.token, noStore: true },
+      );
+      return Response.json(
+        { ok: true, data },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
     if (
       input.action === 'user.create' ||
       input.action === 'user.invite_request'
@@ -91,6 +108,7 @@ export async function POST(request: Request) {
           email: z.string().trim().email().max(254),
           roleKey: z.string().min(1),
           unitId: z.union([z.string().uuid(), z.literal('')]).default(''),
+          ormawaUnitId: z.union([z.string().uuid(), z.literal('')]).default(''),
         })
         .safeParse(input.payload);
       if (!parsed.success)
@@ -123,6 +141,42 @@ export async function POST(request: Request) {
         },
         {
           status: response.ok ? 200 : response.status,
+          headers: { 'Cache-Control': 'no-store' },
+        },
+      );
+    }
+    if (
+      input.action === 'ormawa.unit.save' ||
+      input.action === 'ormawa.unit.assign'
+    ) {
+      const data = await supabaseRpc<{
+        ok: boolean;
+        id?: string;
+        code?: string;
+      }>(
+        'manage_ormawa_unit',
+        { p_action: input.action, p_payload: input.payload },
+        { accessToken: session.token, noStore: true },
+      );
+      const messages: Record<string, string> = {
+        duplicate_unit: 'Nama atau kode ORMAWA Unit sudah digunakan.',
+        invalid_input:
+          'Isi nama dan kode 2–40 karakter: huruf, angka, tanda hubung atau garis bawah.',
+        invalid_unit: 'Pilih ORMAWA Unit yang aktif.',
+        unit_not_found: 'ORMAWA Unit tidak ditemukan.',
+        ormawa_role_required:
+          'Pengguna harus memiliki role ORMAWA terlebih dahulu.',
+      };
+      return Response.json(
+        {
+          ok: data.ok,
+          data,
+          message: data.ok
+            ? 'ORMAWA Unit berhasil disimpan.'
+            : (messages[data.code ?? ''] ?? 'Perubahan ORMAWA Unit gagal.'),
+        },
+        {
+          status: data.ok ? 200 : 400,
           headers: { 'Cache-Control': 'no-store' },
         },
       );

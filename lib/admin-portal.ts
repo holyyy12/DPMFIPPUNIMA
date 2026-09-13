@@ -15,13 +15,25 @@ export type AdminPortalSnapshot = {
     status: string;
     sort_order: number;
   }>;
+  ormawaUnits: Array<{
+    id: string;
+    name: string;
+    code: string;
+    description: string;
+    status: string;
+  }>;
   users: Array<{
     id: string;
     display_name: string;
     email_normalized?: string;
     status: string;
     last_active_at?: string;
-    roles: Array<{ key: string; name: string; unitId?: string }>;
+    roles: Array<{
+      key: string;
+      name: string;
+      unitId?: string;
+      ormawaUnitId?: string;
+    }>;
   }>;
   roles: Array<{
     id: string;
@@ -159,6 +171,7 @@ export const emptyAdminPortal: AdminPortalSnapshot = {
   comments: [],
   notifications: [],
   organizations: [],
+  ormawaUnits: [],
   media: [],
   settings: {},
   surveys: [],
