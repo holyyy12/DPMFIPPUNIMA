@@ -4,6 +4,7 @@ import {
   REFRESH_COOKIE,
   authCookieOptions,
   refreshCookieOptions,
+  isActiveAdminSession,
 } from '@/lib/supabase/auth';
 import { supabaseConfig } from '@/lib/supabase/rest';
 import { z } from 'zod';
@@ -30,18 +31,32 @@ export async function POST(request: Request) {
     const result = (await response.json()) as {
       access_token: string;
       refresh_token: string;
-      user: {
-        factors?: Array<{ id: string; factor_type: string; status: string }>;
-      };
     };
+    if (!(await isActiveAdminSession(result.access_token))) {
+      // Do not leave an Auth session behind for an inactive/unassigned account.
+      await fetch(`${url}/auth/v1/logout?scope=local`, {
+        method: 'POST',
+        headers: {
+          apikey: anon,
+          Authorization: `Bearer ${result.access_token}`,
+        },
+      });
+      const jar = await cookies();
+      jar.delete(ACCESS_COOKIE);
+      jar.delete(REFRESH_COOKIE);
+      return Response.json(
+        {
+          ok: false,
+          message: 'Akun tidak aktif atau belum memiliki akses admin.',
+        },
+        { status: 403 },
+      );
+    }
     const jar = await cookies();
     jar.set(ACCESS_COOKIE, result.access_token, authCookieOptions);
     jar.set(REFRESH_COOKIE, result.refresh_token, refreshCookieOptions);
     return Response.json({
       ok: true,
-      hasVerifiedFactor:
-        result.user.factors?.some((factor) => factor.status === 'verified') ??
-        false,
     });
   } catch (error) {
     const unavailable =

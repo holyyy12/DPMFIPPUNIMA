@@ -12,7 +12,6 @@ export async function GET() {
           displayName: session.user.user_metadata?.display_name,
         },
         aal: session.aal,
-        factors: session.user.factors ?? [],
       },
       { headers: { 'Cache-Control': 'private, no-store' } },
     );

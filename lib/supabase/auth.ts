@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { supabaseConfig } from './rest';
+import { supabaseConfig, supabaseRpc } from './rest';
 
 export const ACCESS_COOKIE = 'dpm_admin_access';
 export const REFRESH_COOKIE = 'dpm_admin_refresh';
@@ -8,12 +8,6 @@ type AuthUser = {
   id: string;
   email?: string;
   user_metadata?: { display_name?: string };
-  factors?: Array<{
-    id: string;
-    factor_type: string;
-    status: string;
-    friendly_name?: string;
-  }>;
 };
 
 function decodePayload(token: string) {
@@ -64,6 +58,7 @@ export async function verifyAdminSession() {
   }
   if (!token || !response?.ok) return null;
   const user = (await response.json()) as AuthUser;
+  if (!(await isActiveAdminSession(token))) return null;
   const payload = decodePayload(token);
   return {
     token,
@@ -71,6 +66,16 @@ export async function verifyAdminSession() {
     aal: payload.aal ?? 'aal1',
     expiresAt: payload.exp ?? 0,
   };
+}
+
+// Supabase verifies authentication. Database roles, not user metadata,
+// decide portal admission; each action retains its own RPC/RLS permission check.
+export async function isActiveAdminSession(token: string) {
+  return supabaseRpc<boolean>(
+    'is_active_admin_session',
+    {},
+    { accessToken: token, noStore: true },
+  );
 }
 
 export const authCookieOptions = {

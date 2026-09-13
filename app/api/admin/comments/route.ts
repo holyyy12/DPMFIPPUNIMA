@@ -15,18 +15,17 @@ const schema = z.object({
   ]),
   reasonDetail: z.string().trim().max(500).optional().or(z.literal('')),
 });
-async function aal2() {
+async function adminSession() {
   const session = await verifyAdminSession();
   if (!session) return null;
-  if (session.aal !== 'aal2') return null;
   return session;
 }
 export async function GET() {
   try {
-    const session = await aal2();
+    const session = await adminSession();
     if (!session)
       return Response.json(
-        { ok: false, message: 'MFA diperlukan.' },
+        { ok: false, message: 'Sesi admin diperlukan.' },
         { status: 403 },
       );
     const data = await supabaseRpc<
@@ -57,10 +56,10 @@ export async function GET() {
 }
 export async function PUT(request: Request) {
   try {
-    const session = await aal2();
+    const session = await adminSession();
     if (!session)
       return Response.json(
-        { ok: false, message: 'MFA diperlukan.' },
+        { ok: false, message: 'Sesi admin diperlukan.' },
         { status: 403 },
       );
     const input = schema.parse(await request.json());

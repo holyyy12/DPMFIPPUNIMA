@@ -122,7 +122,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const session = await verifyAdminSession();
-    if (!session || session.aal !== 'aal2') {
+    if (!session) {
       return Response.json(
         { ok: false, message: 'Sesi admin diperlukan.' },
         { status: 401 },

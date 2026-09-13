@@ -3,7 +3,7 @@ begin;
 select set_config('request.jwt.claims',jsonb_build_object('sub',(
   select ur.profile_id from public.user_roles ur join public.roles r on r.id=ur.role_id
   where r.key='super_admin' and ur.deleted_at is null limit 1
-),'aal','aal2','role','authenticated')::text,true);
+),'aal','aal1','role','authenticated')::text,true);
 set local role authenticated;
 do $$
 declare

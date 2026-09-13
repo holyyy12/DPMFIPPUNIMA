@@ -44,10 +44,7 @@ Deno.serve(async (request) => {
       }),
     });
     if (!prepared.ok)
-      return reply(
-        403,
-        'Hanya Super Admin dengan MFA yang dapat membuat akun.',
-      );
+      return reply(403, 'Hanya Super Admin aktif yang dapat membuat akun.');
     const reservation = (await prepared.json()) as {
       ok: boolean;
       code?: string;

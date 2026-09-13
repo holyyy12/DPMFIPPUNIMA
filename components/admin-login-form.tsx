@@ -28,7 +28,7 @@ export function AdminLoginForm() {
           };
           if (!response.ok || !result.ok)
             throw new Error(result.message ?? 'Login gagal.');
-          window.location.assign('/admin/mfa');
+          window.location.assign('/admin/dashboard');
         } catch (reason) {
           setError(reason instanceof Error ? reason.message : 'Login gagal.');
         } finally {
@@ -42,8 +42,7 @@ export function AdminLoginForm() {
       <p className="form-eyebrow">AKSES TERBATAS</p>
       <h1>Masuk ke portal admin</h1>
       <p>
-        Gunakan akun pada proyek Supabase greenfield. Semua akses administratif
-        wajib dilanjutkan dengan MFA.
+        Masukkan email dan kata sandi akun Anda untuk masuk ke portal admin.
       </p>
       {error && (
         <div role="alert" className="form-error-summary">
@@ -72,7 +71,7 @@ export function AdminLoginForm() {
         {pending ? 'Memeriksa…' : 'Lanjutkan dengan aman'}
       </button>
       <small>
-        Portal ini tidak pernah menggunakan akun atau kredensial sistem lama.
+        Akses fitur mengikuti permission yang diberikan oleh Super Admin.
       </small>
     </form>
   );

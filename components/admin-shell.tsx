@@ -50,19 +50,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const role = data.me?.roles?.[0] ?? 'admin';
   const displayName = data.me?.name ?? 'Administrator';
   useEffect(() => {
-    if (
-      process.env.NEXT_PUBLIC_ENFORCE_ADMIN_AUTH !== 'true' ||
-      pathname === '/admin/login' ||
-      pathname === '/admin/mfa'
-    )
-      return;
+    if (pathname === '/admin/login' || pathname === '/admin/mfa') return;
     void (async () => {
       const r = await fetch('/api/admin/auth/session', { cache: 'no-store' });
       if (!r.ok) location.assign('/admin/login');
-      else {
-        const x = (await r.json()) as { aal?: string };
-        if (x.aal !== 'aal2') location.assign('/admin/mfa');
-      }
     })();
   }, [pathname]);
   if (pathname === '/admin/login' || pathname === '/admin/mfa') return children;

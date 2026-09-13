@@ -6,9 +6,9 @@ const MAX_BYTES = 20 * 1024 * 1024;
 export async function POST(request: Request) {
   try {
     const session = await verifyAdminSession();
-    if (!session || session.aal !== 'aal2')
+    if (!session)
       return Response.json(
-        { ok: false, message: 'Sesi admin dan MFA diperlukan.' },
+        { ok: false, message: 'Sesi admin diperlukan.' },
         { status: 403 },
       );
     const form = await request.formData();

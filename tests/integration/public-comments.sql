@@ -22,16 +22,16 @@ do $$ declare comment_id uuid; reply_id uuid; begin
   exception when insufficient_privilege then null; end;
 end $$;
 reset role;
-select set_config('request.jwt.claims','{"sub":"d1759968-72ca-4857-b1f9-99d14e544dcb","role":"authenticated","aal":"aal1"}',true);
+select set_config('request.jwt.claims','{"role":"authenticated","aal":"aal1"}',true);
 set local role authenticated;
 do $$ begin
   begin
     perform public.moderate_comment(current_setting('test.comment_id')::uuid,'deleted','other','test',gen_random_uuid());
-    raise exception 'AAL1 deletion unexpectedly allowed';
+    raise exception 'Unauthenticated deletion unexpectedly allowed';
   exception when raise_exception then if sqlerrm <> 'FORBIDDEN' then raise; end if; end;
 end $$;
 reset role;
-select set_config('request.jwt.claims','{"sub":"d1759968-72ca-4857-b1f9-99d14e544dcb","role":"authenticated","aal":"aal2"}',true);
+select set_config('request.jwt.claims','{"sub":"d1759968-72ca-4857-b1f9-99d14e544dcb","role":"authenticated","aal":"aal1"}',true);
 set local role authenticated;
 do $$ begin
   if not public.moderate_comment(current_setting('test.comment_id')::uuid,'deleted','other','test removal',gen_random_uuid())

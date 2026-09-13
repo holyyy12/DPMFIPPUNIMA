@@ -5,8 +5,7 @@ import { decrypt } from '@/lib/security/crypto';
 export async function GET(request: Request) {
   try {
     const session = await verifyAdminSession();
-    if (!session || session.aal !== 'aal2')
-      return Response.json({ ok: false }, { status: 403 });
+    if (!session) return Response.json({ ok: false }, { status: 403 });
     const caseId = z
       .string()
       .uuid()

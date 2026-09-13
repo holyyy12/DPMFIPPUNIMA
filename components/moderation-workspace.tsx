@@ -21,7 +21,7 @@ export function ModerationWorkspace() {
       message?: string;
     };
     if (response.status === 403) {
-      window.location.assign('/admin/mfa');
+      window.location.assign('/admin/login');
       return;
     }
     setItems(result.data ?? []);
@@ -61,11 +61,11 @@ export function ModerationWorkspace() {
           <ShieldAlert />
         </span>
         <div>
-          <span>PENYARINGAN AAL2</span>
+          <span>PENYARINGAN KOMENTAR</span>
           <h2>Komentar & laporan</h2>
           <p>
             Antrean nyata dari backend greenfield. Setiap keputusan membutuhkan
-            MFA, izin penyaring, alasan, dan audit event.
+            akun aktif, izin penyaring, alasan, dan audit event.
           </p>
         </div>
       </section>
@@ -83,7 +83,7 @@ export function ModerationWorkspace() {
           <small>Deduplikasi 24 jam</small>
         </article>
         <article>
-          <strong>AAL2</strong>
+          <strong>Permission</strong>
           <b>Gerbang keamanan</b>
           <small>Wajib untuk mutasi</small>
         </article>

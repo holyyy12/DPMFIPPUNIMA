@@ -18,9 +18,9 @@ const headers = { 'Cache-Control': 'private, no-store' };
 export async function POST(request: Request) {
   try {
     const s = await verifyAdminSession();
-    if (!s || s.aal !== 'aal2')
+    if (!s)
       return Response.json(
-        { ok: false, message: 'Sesi admin dan MFA diperlukan.' },
+        { ok: false, message: 'Sesi admin diperlukan.' },
         { status: 403, headers },
       );
     const input = schema.parse(await request.json());
@@ -60,8 +60,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const s = await verifyAdminSession();
-    if (!s || s.aal !== 'aal2')
-      return Response.json({ ok: false }, { status: 403, headers });
+    if (!s) return Response.json({ ok: false }, { status: 403, headers });
     const input = schema
       .extend({
         path: z.string().max(1000),

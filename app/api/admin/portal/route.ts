@@ -29,7 +29,7 @@ const actionSchema = z.object({
 
 async function adminSession() {
   const session = await verifyAdminSession();
-  if (!session || session.aal !== 'aal2') return null;
+  if (!session) return null;
   return session;
 }
 
@@ -38,7 +38,7 @@ export async function GET() {
     const session = await adminSession();
     if (!session)
       return Response.json(
-        { ok: false, message: 'Sesi admin dan MFA diperlukan.' },
+        { ok: false, message: 'Sesi admin diperlukan.' },
         { status: 403 },
       );
     const data = await supabaseRpc<Record<string, unknown>>(
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     const session = await adminSession();
     if (!session)
       return Response.json(
-        { ok: false, message: 'Sesi admin dan MFA diperlukan.' },
+        { ok: false, message: 'Sesi admin diperlukan.' },
         { status: 403 },
       );
     const input = actionSchema.parse(await request.json());

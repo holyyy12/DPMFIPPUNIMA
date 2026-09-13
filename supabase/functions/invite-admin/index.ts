@@ -55,10 +55,7 @@ Deno.serve(async (request) => {
       },
     );
     if (!prepared.ok)
-      return reply(
-        403,
-        'Izin mengelola pengguna dan verifikasi MFA diperlukan.',
-      );
+      return reply(403, 'Akun aktif dan izin mengelola pengguna diperlukan.');
     const reservation = (await prepared.json()) as {
       ok: boolean;
       id: string;

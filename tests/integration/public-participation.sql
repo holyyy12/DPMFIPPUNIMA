@@ -20,12 +20,12 @@ begin
  if private.can_read_ddas(cid) then raise exception 'Anonymous evidence access';end if;
  select ur.profile_id into admin_id from public.user_roles ur join public.roles r on r.id=ur.role_id where r.key='super_admin' and ur.deleted_at is null limit 1;
  if admin_id is not null then
-  perform set_config('request.jwt.claims',jsonb_build_object('sub',admin_id,'aal','aal2')::text,true);
-  if not private.can_read_ddas(cid) then raise exception 'Admin evidence access denied';end if;
   perform set_config('request.jwt.claims',jsonb_build_object('sub',admin_id,'aal','aal1')::text,true);
-  if private.can_read_ddas(cid) then raise exception 'MFA bypass detected';end if;
+  if not private.can_read_ddas(cid) then raise exception 'Admin evidence access denied';end if;
+  perform set_config('request.jwt.claims','{"role":"anon"}',true);
+  if private.can_read_ddas(cid) then raise exception 'Anonymous evidence access detected';end if;
  end if;
  begin perform public.prepare_ddas_upload(ticket,'wrong','qa.pdf','application/pdf',128);raise exception 'Invalid receipt accepted';exception when others then if sqlerrm<>'INVALID_RECEIPT' then raise;end if;end;
 end $$;
-select 'PASS: survey, comments, receipt verification, private upload and MFA boundaries' as result;
+select 'PASS: survey, comments, receipt verification, private upload and permission boundaries' as result;
 rollback;

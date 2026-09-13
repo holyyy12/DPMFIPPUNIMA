@@ -24,8 +24,8 @@ export default function Page() {
           privacy gate lulus.
         </li>
         <li>
-          Portal admin: preview struktur kerja; autentikasi/MFA produksi belum
-          diaktifkan.
+          Portal admin: masuk dengan email dan kata sandi. Akses tindakan
+          mengikuti permission akun.
         </li>
         <li>Komentar dan notifikasi: feature flag default-off.</li>
       </ul>

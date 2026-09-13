@@ -48,7 +48,7 @@ export function InvitationActivation() {
           };
           if (!response.ok || !body.ok) throw new Error(body.message);
           tokens.current = { accessToken: '', refreshToken: '' };
-          location.replace('/admin/mfa');
+          location.replace('/admin/dashboard');
         } catch (cause) {
           setError(
             cause instanceof Error
