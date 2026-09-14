@@ -6741,9 +6741,10 @@ a.developed {
   background: #fff;
   box-shadow: 0 5px 18px rgba(8, 66, 47, 0.06);
 }
-.v6-org-people article.leader {
+.v6-org-people article {
   grid-column: span 1;
-  border-color: #9bc6b5;
+  border-color: #dce4df;
+  border-width: 2.5px;
   background: linear-gradient(135deg, #f4fbf7, #fff);
 }
 .v6-org-people img {
