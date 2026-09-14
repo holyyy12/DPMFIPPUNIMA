@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { Download, Eye, X } from 'lucide-react';
+import { PdfPreview } from './pdf-preview';
 import type { ContentMedia } from '@/lib/content-media';
 import { mediaDownloadUrl, mediaKind, safeMediaUrl } from '@/lib/media-access';
 
@@ -114,7 +115,7 @@ export function MediaActions({ media }: { media: ContentMedia }) {
             ) : kind === 'audio' ? (
               <audio src={url} controls />
             ) : kind === 'pdf' ? (
-              <iframe src={url} title={`Pratinjau ${media.name}`} />
+              <PdfPreview url={url} name={media.name} />
             ) : kind === 'office' && /^https?:/.test(url) ? (
               <>
                 <p>

@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const csp =
-  "default-src 'self'; img-src 'self' data: blob: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+import { contentSecurityPolicy } from './lib/content-security-policy';
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -16,7 +15,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/admin/login', request.url));
   }
   const response = NextResponse.next();
-  response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('Content-Security-Policy', contentSecurityPolicy);
   response.headers.set(
     'Referrer-Policy',
     request.nextUrl.pathname.startsWith('/ddas/')

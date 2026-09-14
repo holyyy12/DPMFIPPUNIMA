@@ -8182,6 +8182,10 @@ footer {
   flex-shrink: 0;
 }
 .media-preview-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  box-sizing: border-box;
   width: min(1040px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
   overflow: auto;
@@ -8190,6 +8194,9 @@ footer {
   padding: 20px;
   color: #162d25;
   background: #fff;
+}
+.media-preview-dialog:not([open]) {
+  display: none;
 }
 .media-preview-dialog::backdrop {
   background: #001d16b8;
@@ -8211,6 +8218,19 @@ footer {
   min-height: 44px;
 }
 .media-preview-content {
+  margin-bottom: 16px;
+}
+.pdf-preview canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+.pdf-preview canvas[hidden] {
+  display: none;
+}
+.pdf-preview-pagination {
+  justify-content: center;
   margin-bottom: 16px;
 }
 .media-preview-content > img,

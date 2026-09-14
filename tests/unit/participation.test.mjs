@@ -29,6 +29,21 @@ const { deriveReceipt, encrypt, decrypt } = await load(
 );
 const { contentMedia } = await load('../../lib/content-media.ts');
 const { mediaDownloadUrl, mediaKind } = await load('../../lib/media-access.ts');
+test('production proxy and framework use the same media preview policy', async () => {
+  const { contentSecurityPolicy } = await load(
+    '../../lib/content-security-policy.ts',
+  );
+  assert.match(
+    contentSecurityPolicy,
+    /frame-src 'self' https:\/\/\*\.supabase\.co https:\/\/view\.officeapps\.live\.com/,
+  );
+  assert.match(contentSecurityPolicy, /media-src 'self' blob: https:/);
+  for (const path of ['../../proxy.ts', '../../next.config.ts']) {
+    const source = await readFile(new URL(path, import.meta.url), 'utf8');
+    assert.match(source, /import \{ contentSecurityPolicy \}/);
+    assert.doesNotMatch(source, /default-src/);
+  }
+});
 test('legacy D-DAR and registered storage files expose preview and download', () => {
   const old = contentMedia({
     body: {
