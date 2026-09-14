@@ -609,8 +609,8 @@ footer {
   font-size: 10px;
 }
 
-.developed {
-  font-size: 2px;
+a.developed {
+  font-size: 10px;
 }
 
 @media (max-width: 900px) {
@@ -4979,13 +4979,16 @@ footer {
 .v5-hero-copy h2 {
   margin: 0;
   color: #303b37;
-  font-size: 24px;
+  font-size: 30px;
   line-height: 1.35;
+  font-weight: 700;
+  font-style: bold;
 }
 .v5-hero-copy p {
   max-width: 540px;
   color: #4c6058;
   font-size: 15px;
+  font-weight: 500;
 }
 .v5-hero-copy > div {
   display: flex;
@@ -5321,6 +5324,7 @@ footer {
 }
 .v5-about-ormawa h2 {
   font-size: 27px;
+  font-color: #fff;
 }
 .v5-about-ormawa p {
   color: #e0eee8;
@@ -5766,32 +5770,80 @@ footer {
   width: 15px;
 }
 .v5-archive-table {
-  overflow: auto;
+  overflow-x: auto;
   border: 1px solid #dce4df;
-  border-radius: 9px;
+  border-radius: 10px;
+  background: #fff;
 }
+
+/*
+ * PENTING:
+ * semua kolom menggunakan ukuran yang deterministik.
+ * Jangan gunakan "auto" pada kolom Aksi karena membuat
+ * header dan baris data memiliki lebar kolom berbeda.
+ */
 .v5-archive-table > div,
 .v5-archive-table > article {
-  min-width: 900px;
+  min-width: 1000px;
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr 0.7fr 1fr auto;
-  gap: 12px;
+
+  grid-template-columns:
+    minmax(150px, 1fr)
+    minmax(300px, 2fr)
+    minmax(120px, 0.9fr)
+    minmax(110px, 0.8fr)
+    minmax(90px, 0.65fr)
+    220px;
+
+  column-gap: 18px;
   align-items: center;
-  padding: 14px 17px;
+
+  padding: 16px 18px;
+
   border-bottom: 1px solid #e2e8e4;
 }
+
+/* HEADER */
 .v5-archive-table > div {
   background: #f3f7f4;
+  font-weight: 700;
 }
+
+/* BARIS DATA */
+.v5-archive-table > article {
+  min-height: 64px;
+}
+
+/* Hilangkan border pada baris terakhir */
+.v5-archive-table > article:last-child {
+  border-bottom: 0;
+}
+
+/* NAMA ARSIP */
 .v5-archive-table article > b {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
+
+  min-width: 0;
 }
+
+/* ICON ARSIP */
+.v5-archive-table article > b > svg {
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+}
+
+/* KOLOM AKSI */
+.v5-archive-table > div > :last-child,
+.v5-archive-table > article > :last-child {
+  justify-self: end;
+}
+
 .v5-archive-table svg {
   width: 17px;
-}
-.v5-ormawa-grid {
+}.v5-ormawa-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 18px;
@@ -8277,4 +8329,31 @@ footer {
 .ddar-admin-actions > button {
   min-height: 44px;
   padding: 0.6rem 0.9rem;
+}
+.v5-shell-h1 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.35;
+  font-weight: 700;
+  font-style: bold;
+  color: var(--v6-green-dark);
+}
+.v5-shell-h2 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.35;
+  font-weight: 600;
+  font-style: bold;
+  color: var(--v6-green-dark);
+}
+.v5-shell-p {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.35;
+  font-style: bold;
+  color: var(--v6-green-dark);
+}
+.v5-about-ormawa h2 {
+  font-weight: 600;
+  color: #fff;
 }

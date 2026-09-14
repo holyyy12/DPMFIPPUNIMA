@@ -89,7 +89,7 @@ export function V4Home() {
           <div className="v5-hero-copy">
             <h2>
               {savedHome.subtitle ??
-                'Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.'}
+                'Aspirasi, Legislasi, dan Pengawasan Mahasiswa.'}
             </h2>
             <p>
               {savedHome.paragraph ??
@@ -100,7 +100,7 @@ export function V4Home() {
                 className="v6-cta v6-cta-secondary"
                 href={savedHome.cta1Href ?? '/tentang'}
               >
-                <ShieldCheck /> {savedHome.cta1 ?? 'Jelajahi DPM'}
+                <ShieldCheck /> {savedHome.cta1 ?? ''}
               </Link>
               <Link
                 className="v6-cta v6-cta-primary"
@@ -257,12 +257,11 @@ export function V4About() {
       >
         <div className="v5-shell">
           <small>Beranda › Tentang</small>
-          <h1>Tentang DPM FIPP UNIMA</h1>
-          <h2>Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.</h2>
-
-          <p>
+          <h1 className="v5-shell-h1">Tentang DPM FIPP UNIMA</h1>
+          <h2 className="v5-shell-h2">Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.</h2>
+          <p className="v5-shell-p">
             {about?.description ??
-              'Informasi Tentang DPM belum diisi melalui Portal Admin.'}
+              ''}
           </p>
           <div className="v4-period">
             <span>
@@ -281,7 +280,7 @@ export function V4About() {
       )}
       <section className="v5-shell v5-org">
         <header>
-          <h2>Struktur Organisasi DPM FIPP UNIMA</h2>
+          <h2 className="v5-shell-h2">Struktur Organisasi DPM FIPP UNIMA</h2>
         </header>
         <div className="v6-org-people">
           {organizationMembers.map((person, index) => (

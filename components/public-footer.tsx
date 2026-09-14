@@ -23,9 +23,13 @@ export function PublicFooter() {
           <Link href="/ddas/tracking">Lacak Aspirasi</Link>
           <Link href="/survei">Survei</Link>
           <Link href="/admin/login">Portal Admin</Link>
+
+          {/* 
           <Link href="https://median.co/share/pwokpqq#apk">
             Download Aplikasi DPM FIPP
           </Link>
+          */}
+        
         </div>
         <div>
           <b>Informasi</b>

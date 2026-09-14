@@ -13,6 +13,7 @@ const links = [
   ['/d-sight', 'D-SIGHT'],
   ['/d-trace', 'D-TRACE'],
   ['/d-dar', 'D-DAR'],
+  ['/admin/login', 'Portal Admin'],
 ] as const;
 export function PublicHeader() {
   const pathname = usePathname();
