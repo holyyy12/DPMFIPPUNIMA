@@ -20,6 +20,7 @@ import { PublicFooter } from './public-footer';
 import { PublicComments } from './public-comments';
 import { HomeSurveyCard } from './home-survey-card';
 import { ContentGallery } from './content-gallery';
+import { OrganizationLogo } from './organization-logo';
 import { contentMedia } from '@/lib/content-media';
 import { DdasWorkspace } from './ddas-workspace';
 import { usePublicPortal } from './use-public-portal';
@@ -219,7 +220,11 @@ export function V4Home() {
                 key={x.slug}
                 style={{ background: '#075d46' }}
               >
-                {x.shortName ?? x.name.slice(0, 4)}
+                <OrganizationLogo
+                  name={x.name}
+                  shortName={x.shortName}
+                  logo={x.contact?.logo}
+                />
               </Link>
             ))}
           </div>
@@ -258,11 +263,10 @@ export function V4About() {
         <div className="v5-shell">
           <small>Beranda › Tentang</small>
           <h1 className="v5-shell-h1">Tentang DPM FIPP UNIMA</h1>
-          <h2 className="v5-shell-h2">Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.</h2>
-          <p className="v5-shell-p">
-            {about?.description ??
-              ''}
-          </p>
+          <h2 className="v5-shell-h2">
+            Representasi, Aspirasi, Legislasi, dan Pengawasan Mahasiswa.
+          </h2>
+          <p className="v5-shell-p">{about?.description ?? ''}</p>
           <div className="v4-period">
             <span>
               Dewan Perwakilan<b>Mahasiswa</b>
@@ -313,7 +317,11 @@ export function V4About() {
                 key={x.slug}
                 style={{ background: '#075d46' }}
               >
-                {x.shortName ?? x.name.slice(0, 4)}
+                <OrganizationLogo
+                  name={x.name}
+                  shortName={x.shortName}
+                  logo={x.contact?.logo}
+                />
               </Link>
             ))}
           </div>

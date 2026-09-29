@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AdminPortalSnapshot } from '@/lib/admin-portal';
 import type { ContentMedia } from '@/lib/content-media';
 import { EditableMedia } from './editable-media';
@@ -29,6 +29,18 @@ export function OrganizationEditor({
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  const [logo, setLogo] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState('');
+  useEffect(() => {
+    if (!logoFile) {
+      setLogoPreview('');
+      return;
+    }
+    const url = URL.createObjectURL(logoFile);
+    setLogoPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [logoFile]);
   function choose(id: string) {
     const item = data.organizations.find((o) => o.id === id);
     setForm(
@@ -44,6 +56,8 @@ export function OrganizationEditor({
         : empty,
     );
     setMedia(item?.contact_public?.media ?? []);
+    setLogo(item?.contact_public?.logo ?? '');
+    setLogoFile(null);
     setFiles([]);
     setNotice('');
   }
@@ -117,6 +131,69 @@ export function OrganizationEditor({
             placeholder="Satu program per baris"
           />
         </label>
+        <fieldset className="organization-logo-editor">
+          <legend>Logo ORMAWA</legend>
+          {logoPreview || logo ? (
+            <img
+              src={logoPreview || logo}
+              alt={`Pratinjau logo ${form.name || 'ORMAWA'}`}
+            />
+          ) : (
+            <p>Belum ada logo.</p>
+          )}
+          <label>
+            Unggah / ganti logo
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+                event.target.value = '';
+                if (!file) return;
+                if (
+                  !['image/png', 'image/jpeg', 'image/webp'].includes(
+                    file.type,
+                  ) ||
+                  file.size > 2 * 1024 * 1024
+                ) {
+                  setNotice('Logo harus PNG, JPG, atau WebP, maksimal 2 MB.');
+                  return;
+                }
+                setBusy(true);
+                try {
+                  const image = await createImageBitmap(file);
+                  image.close();
+                  setLogoFile(file);
+                  setNotice(
+                    'Logo siap diunggah. Tekan Simpan & Terbitkan Halaman.',
+                  );
+                } catch {
+                  setNotice(
+                    'File gambar tidak dapat dibaca. Pilih gambar lain.',
+                  );
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            />
+          </label>
+          <small>
+            PNG, JPG, atau WebP, maksimal 2 MB. Logo ditampilkan utuh, tanpa
+            dipotong.
+          </small>
+          {(logo || logoFile) && (
+            <button
+              type="button"
+              onClick={() => {
+                setLogo('');
+                setLogoFile(null);
+                setNotice('Logo akan dilepas setelah halaman disimpan.');
+              }}
+            >
+              Lepaskan logo
+            </button>
+          )}
+        </fieldset>
         <EditableMedia
           items={media}
           onChange={setMedia}
@@ -132,6 +209,18 @@ export function OrganizationEditor({
             setNotice('');
             void (async () => {
               try {
+                let savedLogo = logo;
+                if (logoFile) {
+                  const [uploadedLogo] = await uploadFiles(
+                    [logoFile],
+                    'public-media',
+                    1,
+                    2 * 1024 * 1024,
+                  );
+                  savedLogo = uploadedLogo.publicUrl;
+                  setLogo(savedLogo);
+                  setLogoFile(null);
+                }
                 const added = await uploadFiles(
                   files,
                   'public-media',
@@ -146,7 +235,14 @@ export function OrganizationEditor({
                 setFiles([]);
                 const result = await runAction(
                   'organization.save',
-                  { ...form, contact: { media: all, programs: form.programs } },
+                  {
+                    ...form,
+                    contact: {
+                      media: all,
+                      programs: form.programs,
+                      logo: savedLogo,
+                    },
+                  },
                   'Halaman ORMAWA berhasil disimpan.',
                 );
                 if (result?.id)

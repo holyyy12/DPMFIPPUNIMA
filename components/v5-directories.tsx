@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ContentGallery } from './content-gallery';
+import { OrganizationLogo } from './organization-logo';
 import { MediaActions } from './media-actions';
 import { contentMedia } from '@/lib/content-media';
 import { PublicSurveys } from './public-surveys';
@@ -550,9 +551,11 @@ export function OrmawaDirectory() {
           );
           return (
             <article key={item.id}>
-              <span>
-                {item.shortName || item.name.slice(0, 3).toUpperCase()}
-              </span>
+              <OrganizationLogo
+                name={item.name}
+                shortName={item.shortName}
+                logo={item.contact?.logo}
+              />
               <h2>{item.name}</h2>
               <p>{item.description}</p>
               <small>{programs.length} program kerja ditampilkan</small>
@@ -610,7 +613,11 @@ export function OrmawaProfile({ slug }: { slug: string }) {
     <PublicFrame>
       <section className="v5-ormawa-hero">
         <div className="v5-shell">
-          <span>{item.shortName || item.name.slice(0, 3).toUpperCase()}</span>
+          <OrganizationLogo
+            name={item.name}
+            shortName={item.shortName}
+            logo={item.contact?.logo}
+          />
           <div>
             <small>HALAMAN PERKENALAN ORMAWA</small>
             <h1>{item.name}</h1>
