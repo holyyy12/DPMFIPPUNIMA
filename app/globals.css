@@ -5922,7 +5922,17 @@ a.developed {
 }
 .v5-ormawa-hero {
   padding: 58px 0;
+  background: #064735;
   color: #fff;
+}
+.v5-ormawa-hero .v5-shell > div {
+  min-width: 0;
+}
+.v5-ormawa-hero small {
+  color: #d8eee5;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 .v5-ormawa-hero .v5-shell {
   display: flex;
@@ -5930,6 +5940,8 @@ a.developed {
   gap: 25px;
 }
 .v5-ormawa-hero .v5-shell > span {
+  flex-shrink: 0;
+  color: #fff;
   display: grid;
   place-items: center;
   width: 100px;
@@ -5940,12 +5952,18 @@ a.developed {
   font-weight: 850;
 }
 .v5-ormawa-hero h1 {
+  color: #fff;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
   margin: 5px 0;
   font-size: 42px;
 }
 .v5-ormawa-hero p {
   max-width: 720px;
   color: #e7f0ec;
+  font-size: 1rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
 }
 .v5-ormawa-profile {
   display: grid;
