@@ -621,14 +621,14 @@ export function OrmawaProfile({ slug }: { slug: string }) {
           <div>
             <small>HALAMAN PERKENALAN ORMAWA</small>
             <h1>{item.name}</h1>
-            <p>{item.description}</p>
+            <p>{item.shortName}</p>
           </div>
         </div>
       </section>
       <section className="v5-shell v5-ormawa-profile">
         <article>
           <h2>Tentang Organisasi</h2>
-          <p>{item.shortName}</p>
+          <p>{item.description}</p>
           {item.members.length > 0 && (
             <>
               <h2>Pengurus</h2>
